@@ -239,4 +239,24 @@ analytics.get('/streak', async (c) => {
   return c.json({ currentStreak, totalWorkouts: dates.length })
 })
 
+// All workout dates for contribution grid
+analytics.get('/workout-dates', async (c) => {
+  const userId = c.get('userId')
+  const months = parseInt(c.req.query('months') || '6')
+  const db = getDb()
+
+  const result = await db.execute({
+    sql: `
+      SELECT DISTINCT date(start_time) as workout_date
+      FROM workouts
+      WHERE user_id = ?
+        AND start_time >= datetime('now', '-${months} months')
+      ORDER BY workout_date ASC
+    `,
+    args: [userId]
+  })
+
+  return c.json(result.rows.map(r => r.workout_date))
+})
+
 export { analytics as analyticsRoutes }

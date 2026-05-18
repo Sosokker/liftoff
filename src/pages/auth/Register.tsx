@@ -51,12 +51,12 @@ export default function RegisterPage() {
           <Dumbbell class="w-8 h-8 text-white" />
         </div>
         <h1 class="text-2xl font-bold">Get started</h1>
-        <p class="text-neutral-500 dark:text-neutral-400 mt-1">Create your account</p>
+        <p class="text-neutral-500 text-neutral-400 mt-1">Create your account</p>
       </div>
 
       <form onSubmit={handleSubmit} class="w-full max-w-sm space-y-4">
         <Show when={error()}>
-          <div class="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">
+          <div class="p-3 bg-red-50 bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">
             {error()}
           </div>
         </Show>
@@ -122,16 +122,16 @@ export default function RegisterPage() {
       <div class="w-full max-w-sm mt-6">
         <div class="relative">
           <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-neutral-200 dark:border-dark-border"></div>
+            <div class="w-full border-t border-[#333] border-[#262626]"></div>
           </div>
           <div class="relative flex justify-center text-sm">
-            <span class="bg-neutral-50 dark:bg-dark-bg px-2 text-neutral-500 dark:text-neutral-400">or</span>
+            <span class="bg-[#1a1a1a] bg-[#0a0a0a] px-2 text-neutral-500 text-neutral-400">or</span>
           </div>
         </div>
 
         <button
           onClick={handleGoogleLogin}
-          class="mt-4 w-full flex items-center justify-center gap-2 py-3 px-4 border border-neutral-200 dark:border-dark-border rounded-xl bg-white dark:bg-dark-card hover:bg-neutral-50 dark:hover:bg-dark-surface transition-colors font-medium text-sm"
+          class="mt-4 w-full flex items-center justify-center gap-2 py-3 px-4 border border-[#333] border-[#262626] rounded-xl bg-white bg-[#161616] hover:bg-[#1a1a1a] dark:hover:bg-dark-surface transition-colors font-medium text-sm"
         >
           <svg class="w-5 h-5" viewBox="0 0 24 24">
             <path
@@ -155,7 +155,7 @@ export default function RegisterPage() {
         </button>
       </div>
 
-      <p class="mt-6 text-sm text-neutral-500 dark:text-neutral-400">
+      <p class="mt-6 text-sm text-neutral-500 text-neutral-400">
         Already have an account?{' '}
         <button onClick={() => navigate('/login')} class="text-primary font-semibold">
           Log in

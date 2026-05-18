@@ -32,7 +32,7 @@ export default function PlateCalculatorPage() {
     <div class="px-4 py-6">
       <button 
         onClick={() => navigate('/tools')}
-        class="flex items-center gap-1 text-sm text-neutral-500 dark:text-neutral-400 mb-4"
+        class="flex items-center gap-1 text-sm text-neutral-500 text-neutral-400 mb-4"
       >
         <ArrowLeft class="w-4 h-4" />
         Back to tools
@@ -44,7 +44,7 @@ export default function PlateCalculatorPage() {
         </div>
         <div>
           <h2 class="text-xl font-bold">Plate Calculator</h2>
-          <p class="text-sm text-neutral-500 dark:text-neutral-400">Calculate barbell loading</p>
+          <p class="text-sm text-neutral-500 text-neutral-400">Calculate barbell loading</p>
         </div>
       </div>
 
@@ -58,7 +58,7 @@ export default function PlateCalculatorPage() {
               class={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
                 unit() === 'lbs' 
                   ? 'bg-primary text-white' 
-                  : 'bg-neutral-100 dark:bg-dark-surface text-neutral-600 dark:text-neutral-400'
+                  : 'bg-[#262626] bg-[#1a1a1a] text-neutral-300 text-neutral-400'
               }`}
             >
               Lbs
@@ -69,7 +69,7 @@ export default function PlateCalculatorPage() {
               class={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
                 unit() === 'kg' 
                   ? 'bg-primary text-white' 
-                  : 'bg-neutral-100 dark:bg-dark-surface text-neutral-600 dark:text-neutral-400'
+                  : 'bg-[#262626] bg-[#1a1a1a] text-neutral-300 text-neutral-400'
               }`}
             >
               Kg
@@ -114,19 +114,19 @@ export default function PlateCalculatorPage() {
           
           <div class="space-y-3">
             <div class="flex justify-between text-sm">
-              <span class="text-neutral-500 dark:text-neutral-400">Target</span>
+              <span class="text-neutral-500 text-neutral-400">Target</span>
               <span class="font-semibold">{result().targetWeight} {unit()}</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-neutral-500 dark:text-neutral-400">Bar</span>
+              <span class="text-neutral-500 text-neutral-400">Bar</span>
               <span class="font-semibold">{result().barWeight} {unit()}</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-neutral-500 dark:text-neutral-400">Per side</span>
+              <span class="text-neutral-500 text-neutral-400">Per side</span>
               <span class="font-semibold">{result().weightPerSide.toFixed(1)} {unit()}</span>
             </div>
             
-            <div class="border-t border-neutral-100 dark:border-dark-border pt-3">
+            <div class="border-t border-[#262626] border-[#262626] pt-3">
               <p class="text-sm font-medium mb-2">Plates per side:</p>
               <Show when={result().plates.length > 0} fallback={
                 <p class="text-sm text-neutral-500">Bar only</p>

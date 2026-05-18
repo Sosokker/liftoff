@@ -120,7 +120,7 @@ export default function ExercisesPage() {
               class={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                 activeFilter() === group
                   ? 'bg-primary text-white'
-                  : 'bg-neutral-100 dark:bg-dark-surface text-neutral-600 dark:text-neutral-400'
+                  : 'bg-[#262626] bg-[#1a1a1a] text-neutral-300 text-neutral-400'
               }`}
             >
               {group}
@@ -136,8 +136,8 @@ export default function ExercisesPage() {
       }>
         <Show when={filteredExercises().length > 0} fallback={
           <div class="card p-8 text-center">
-            <Dumbbell class="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
-            <p class="text-neutral-500 dark:text-neutral-400">No exercises found</p>
+            <Dumbbell class="w-12 h-12 text-neutral-300 text-neutral-300 mx-auto mb-3" />
+            <p class="text-neutral-500 text-neutral-400">No exercises found</p>
           </div>
         }>
           <div class="space-y-2">
@@ -156,7 +156,7 @@ export default function ExercisesPage() {
                         </span>
                       </Show>
                     </div>
-                    <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    <p class="text-xs text-neutral-500 text-neutral-400 mt-0.5">
                       {exercise.muscle_group} {exercise.equipment && `• ${exercise.equipment}`}
                     </p>
                   </div>

@@ -73,8 +73,8 @@ export default function WorkoutHistoryPage() {
       }>
         <Show when={workouts().length > 0} fallback={
           <div class="card p-8 text-center">
-            <Dumbbell class="w-12 h-12 text-neutral-300 dark:text-neutral-600 mx-auto mb-3" />
-            <p class="text-neutral-500 dark:text-neutral-400 mb-2">No workouts yet</p>
+            <Dumbbell class="w-12 h-12 text-neutral-300 text-neutral-300 mx-auto mb-3" />
+            <p class="text-neutral-500 text-neutral-400 mb-2">No workouts yet</p>
             <button 
               onClick={() => navigate('/workout')}
               class="text-primary font-medium"
@@ -91,7 +91,7 @@ export default function WorkoutHistoryPage() {
                     <div class="flex items-start justify-between mb-3">
                       <div>
                         <h3 class="font-semibold">{workout.name}</h3>
-                        <div class="flex items-center gap-3 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        <div class="flex items-center gap-3 mt-1 text-xs text-neutral-500 text-neutral-400">
                           <span class="flex items-center gap-1">
                             <Calendar class="w-3 h-3" />
                             {formatDate(workout.start_time)}
@@ -127,10 +127,10 @@ export default function WorkoutHistoryPage() {
                     </div>
                     
                     <div class="flex items-center gap-4 text-sm">
-                      <span class="text-neutral-600 dark:text-neutral-300">
+                      <span class="text-neutral-300 text-neutral-300">
                         {workout.exercise_count || 0} exercises
                       </span>
-                      <span class="text-neutral-600 dark:text-neutral-300">
+                      <span class="text-neutral-300 text-neutral-300">
                         {workout.completed_sets || 0} sets
                       </span>
                     </div>

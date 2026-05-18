@@ -107,7 +107,7 @@ export default function ExerciseDetailPage() {
     <div class="px-4 py-6">
       <button 
         onClick={() => navigate('/exercises')}
-        class="flex items-center gap-1 text-sm text-neutral-500 dark:text-neutral-400 mb-4"
+        class="flex items-center gap-1 text-sm text-neutral-500 text-neutral-400 mb-4"
       >
         <ArrowLeft class="w-4 h-4" />
         Back to exercises
@@ -128,7 +128,7 @@ export default function ExerciseDetailPage() {
                   {exercise().muscle_group}
                 </span>
                 <Show when={exercise().equipment}>
-                  <span class="text-sm bg-neutral-100 dark:bg-dark-surface text-neutral-600 dark:text-neutral-400 px-2 py-0.5 rounded-full">
+                  <span class="text-sm bg-[#262626] bg-[#1a1a1a] text-neutral-300 text-neutral-400 px-2 py-0.5 rounded-full">
                     {exercise().equipment}
                   </span>
                 </Show>
@@ -143,7 +143,7 @@ export default function ExerciseDetailPage() {
                   <span class="text-[10px] font-medium text-primary">Max</span>
                 </div>
                 <p class="text-lg font-bold">{maxWeight()}</p>
-                <p class="text-[10px] text-neutral-500 dark:text-neutral-400">kg/lbs</p>
+                <p class="text-[10px] text-neutral-500 text-neutral-400">kg/lbs</p>
               </div>
               <div class="stat-card p-3">
                 <div class="flex items-center gap-1.5 mb-1">
@@ -151,7 +151,7 @@ export default function ExerciseDetailPage() {
                   <span class="text-[10px] font-medium text-primary">Sets</span>
                 </div>
                 <p class="text-lg font-bold">{totalSets()}</p>
-                <p class="text-[10px] text-neutral-500 dark:text-neutral-400">logged</p>
+                <p class="text-[10px] text-neutral-500 text-neutral-400">logged</p>
               </div>
               <div class="stat-card p-3">
                 <div class="flex items-center gap-1.5 mb-1">
@@ -159,7 +159,7 @@ export default function ExerciseDetailPage() {
                   <span class="text-[10px] font-medium text-primary">Recent</span>
                 </div>
                 <p class="text-lg font-bold">{history().length}</p>
-                <p class="text-[10px] text-neutral-500 dark:text-neutral-400">records</p>
+                <p class="text-[10px] text-neutral-500 text-neutral-400">records</p>
               </div>
             </div>
 
@@ -178,7 +178,7 @@ export default function ExerciseDetailPage() {
             <Show when={exercise().instructions}>
               <div class="card p-4">
                 <h3 class="font-semibold mb-2">Instructions</h3>
-                <p class="text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
+                <p class="text-sm text-neutral-300 text-neutral-300 leading-relaxed">
                   {exercise().instructions}
                 </p>
               </div>
@@ -188,14 +188,14 @@ export default function ExerciseDetailPage() {
             <div>
               <h3 class="font-semibold mb-3">Recent Performance</h3>
               <Show when={history().length > 0} fallback={
-                <p class="text-sm text-neutral-500 dark:text-neutral-400">No history yet</p>
+                <p class="text-sm text-neutral-500 text-neutral-400">No history yet</p>
               }>
                 <div class="space-y-2">
                   <For each={history()}>
                     {(h) => (
                       <div class="card p-3 flex items-center justify-between">
                         <div>
-                          <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                          <p class="text-xs text-neutral-500 text-neutral-400">
                             {new Date(h.start_time).toLocaleDateString()}
                           </p>
                           <p class="text-sm font-medium mt-0.5">
@@ -203,9 +203,9 @@ export default function ExerciseDetailPage() {
                           </p>
                         </div>
                         <span class={`text-xs px-2 py-0.5 rounded-full ${
-                          h.set_type === 'warmup' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30' :
+                          h.set_type === 'warmup' ? 'bg-yellow-100 text-yellow-700 bg-yellow-900/30' :
                           h.set_type === 'failure' ? 'bg-red-100 text-red-700 dark:bg-red-900/30' :
-                          'bg-neutral-100 text-neutral-700 dark:bg-dark-surface'
+                          'bg-[#262626] text-neutral-700 bg-[#1a1a1a]'
                         }`}>
                           {h.set_type}
                         </span>

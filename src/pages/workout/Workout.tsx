@@ -471,11 +471,11 @@ export default function WorkoutPage() {
   }
 
   const setTypeColors: Record<string, string> = {
-    warmup: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
-    normal: 'bg-neutral-100 text-neutral-700 dark:bg-dark-surface dark:text-neutral-300',
-    drop_set: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+    warmup: 'bg-yellow-100 text-yellow-700 bg-yellow-900/30 dark:text-yellow-400',
+    normal: 'bg-[#262626] text-neutral-700 bg-[#1a1a1a] text-neutral-300',
+    drop_set: 'bg-purple-100 text-purple-700 bg-purple-900/30 dark:text-purple-400',
     failure: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-    superset: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+    superset: 'bg-blue-100 text-blue-700 bg-blue-900/30 dark:text-blue-400'
   }
 
   return (
@@ -485,7 +485,7 @@ export default function WorkoutPage() {
         <Show when={isLoadingRoutine()}>
           <div class="text-center py-12">
             <Loader2 class="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
-            <p class="text-neutral-500 dark:text-neutral-400">Loading routine...</p>
+            <p class="text-neutral-500 text-neutral-400">Loading routine...</p>
           </div>
         </Show>
         <Show when={!isLoadingRoutine()}>
@@ -494,7 +494,7 @@ export default function WorkoutPage() {
               <Play class="w-8 h-8 text-primary ml-1" />
             </div>
             <h2 class="text-xl font-bold mb-2">Start Workout</h2>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
+            <p class="text-sm text-neutral-500 text-neutral-400 mb-6">
               Log your training session and track your progress
             </p>
             
@@ -523,7 +523,7 @@ export default function WorkoutPage() {
               onInput={(e) => setWorkoutName(e.currentTarget.value)}
               class="font-semibold bg-transparent border-none focus:outline-none text-lg w-full"
             />
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">
+            <p class="text-sm text-neutral-500 text-neutral-400">
               {formatTime(elapsed())}
             </p>
           </div>
@@ -561,11 +561,11 @@ export default function WorkoutPage() {
           <For each={exercises()}>
             {(exercise, exerciseIndex) => (
               <div class="card overflow-visible">
-                <div class="p-4 border-b border-neutral-100 dark:border-dark-border">
+                <div class="p-4 border-b border-[#262626] border-[#262626]">
                   <div class="flex items-start justify-between">
                     <div>
                       <h3 class="font-semibold">{exercise.exercise_name}</h3>
-                      <p class="text-xs text-neutral-500 dark:text-neutral-400">{exercise.muscle_group}</p>
+                      <p class="text-xs text-neutral-500 text-neutral-400">{exercise.muscle_group}</p>
                     </div>
                     <button 
                       onClick={() => removeExercise(exerciseIndex())}
@@ -579,12 +579,12 @@ export default function WorkoutPage() {
                 <div class="p-4 space-y-2">
                   {/* Previous Performance */}
                   <Show when={exercise.previousPerformance}>
-                    <div class="bg-neutral-50 dark:bg-dark-surface rounded-lg px-3 py-2 flex items-center gap-2">
+                    <div class="bg-[#1a1a1a] bg-[#1a1a1a] rounded-lg px-3 py-2 flex items-center gap-2">
                       <span class="text-[10px] font-medium text-neutral-400 uppercase tracking-wider">Prev</span>
                       <div class="flex-1 flex gap-2 overflow-x-auto">
                         <For each={exercise.previousPerformance!.sets}>
                           {(prevSet) => (
-                            <span class="text-xs text-neutral-600 dark:text-neutral-300 whitespace-nowrap">
+                            <span class="text-xs text-neutral-300 text-neutral-300 whitespace-nowrap">
                               {prevSet.weight || '-'}×{prevSet.reps || '-'}
                             </span>
                           )}
@@ -597,7 +597,7 @@ export default function WorkoutPage() {
                   </Show>
 
                   {/* Set Header */}
-                  <div class="grid grid-cols-[auto_1fr_1fr_1fr_1fr_auto] gap-2 text-xs text-neutral-500 dark:text-neutral-400 px-2">
+                  <div class="grid grid-cols-[auto_1fr_1fr_1fr_1fr_auto] gap-2 text-xs text-neutral-500 text-neutral-400 px-2">
                     <span>Set</span>
                     <span>KG</span>
                     <span>Reps</span>
@@ -616,7 +616,7 @@ export default function WorkoutPage() {
                           type="number"
                           value={set.weight || ''}
                           onInput={(e) => updateSet(exerciseIndex(), setIndex(), 'weight', parseFloat(e.currentTarget.value) || 0)}
-                          class="w-full bg-transparent border border-neutral-200 dark:border-dark-border rounded-lg px-2 py-1 text-sm text-center"
+                          class="w-full bg-transparent border border-[#333] border-[#262626] rounded-lg px-2 py-1 text-sm text-center"
                           placeholder="0"
                           min="0"
                           step="0.5"
@@ -626,7 +626,7 @@ export default function WorkoutPage() {
                           type="number"
                           value={set.reps || ''}
                           onInput={(e) => updateSet(exerciseIndex(), setIndex(), 'reps', parseInt(e.currentTarget.value) || 0)}
-                          class="w-full bg-transparent border border-neutral-200 dark:border-dark-border rounded-lg px-2 py-1 text-sm text-center"
+                          class="w-full bg-transparent border border-[#333] border-[#262626] rounded-lg px-2 py-1 text-sm text-center"
                           placeholder="0"
                           min="0"
                         />
@@ -634,7 +634,7 @@ export default function WorkoutPage() {
                         <select
                           value={set.rpe || ''}
                           onChange={(e) => updateSet(exerciseIndex(), setIndex(), 'rpe', parseInt(e.currentTarget.value) || 0)}
-                          class="w-full bg-transparent border border-neutral-200 dark:border-dark-border rounded-lg px-1 py-1 text-sm text-center"
+                          class="w-full bg-transparent border border-[#333] border-[#262626] rounded-lg px-1 py-1 text-sm text-center"
                         >
                           <option value="">-</option>
                           <For each={[6, 7, 7.5, 8, 8.5, 9, 9.5, 10]}>
@@ -659,7 +659,7 @@ export default function WorkoutPage() {
                           class={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                             set.is_completed 
                               ? 'bg-primary text-white' 
-                              : 'bg-neutral-100 dark:bg-dark-surface hover:bg-neutral-200'
+                              : 'bg-[#262626] bg-[#1a1a1a] hover:bg-[#333]'
                           }`}
                         >
                           <Check class="w-4 h-4" />
@@ -671,7 +671,7 @@ export default function WorkoutPage() {
                   {/* Add Set Button */}
                   <button 
                     onClick={() => addSet(exerciseIndex())}
-                    class="w-full py-2 border-2 border-dashed border-neutral-200 dark:border-dark-border rounded-xl text-sm text-neutral-500 dark:text-neutral-400 hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-1"
+                    class="w-full py-2 border-2 border-dashed border-[#333] border-[#262626] rounded-xl text-sm text-neutral-500 text-neutral-400 hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-1"
                   >
                     <Plus class="w-4 h-4" /> Add Set
                   </button>
@@ -684,7 +684,7 @@ export default function WorkoutPage() {
         {/* Add Exercise Button */}
         <button 
           onClick={() => setShowExercisePicker(true)}
-          class="w-full py-4 border-2 border-dashed border-neutral-200 dark:border-dark-border rounded-xl text-neutral-500 dark:text-neutral-400 hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
+          class="w-full py-4 border-2 border-dashed border-[#333] border-[#262626] rounded-xl text-neutral-500 text-neutral-400 hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
         >
           <Plus class="w-5 h-5" />
           <span class="font-medium">Add Exercise</span>
@@ -695,7 +695,7 @@ export default function WorkoutPage() {
       <Show when={showExercisePicker()}>
         <div class="fixed inset-0 z-50 bg-black/50 flex items-end" onClick={() => setShowExercisePicker(false)}>
           <div class="bottom-sheet w-full max-h-[70vh]" onClick={(e) => e.stopPropagation()}>
-            <div class="p-4 border-b border-neutral-100 dark:border-dark-border space-y-3">
+            <div class="p-4 border-b border-[#262626] border-[#262626] space-y-3">
               <div class="flex items-center justify-between">
                 <h3 class="font-semibold text-lg">Select Exercise</h3>
                 <button onClick={() => setShowExercisePicker(false)}>
@@ -717,7 +717,7 @@ export default function WorkoutPage() {
                       class={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors ${
                         exerciseMuscleFilter() === group
                           ? 'bg-primary text-white'
-                          : 'bg-neutral-100 dark:bg-dark-surface text-neutral-600 dark:text-neutral-400'
+                          : 'bg-[#262626] bg-[#1a1a1a] text-neutral-300 text-neutral-400'
                       }`}
                     >
                       {group}
@@ -734,7 +734,7 @@ export default function WorkoutPage() {
                     class="exercise-card w-full text-left"
                   >
                     <p class="font-medium">{exercise.name}</p>
-                    <p class="text-xs text-neutral-500 dark:text-neutral-400">{exercise.muscle_group}</p>
+                    <p class="text-xs text-neutral-500 text-neutral-400">{exercise.muscle_group}</p>
                   </button>
                 )}
               </For>
@@ -748,7 +748,7 @@ export default function WorkoutPage() {
         <div class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div class="card w-full max-w-sm p-6">
             <h3 class="text-lg font-bold mb-2">Finish Workout?</h3>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+            <p class="text-sm text-neutral-500 text-neutral-400 mb-4">
               Duration: {formatTime(elapsed())} | {exercises().length} exercises
             </p>
             <textarea
@@ -785,24 +785,24 @@ export default function WorkoutPage() {
                 <Check class="w-8 h-8 text-primary" />
               </div>
               <h3 class="text-xl font-bold">Workout Complete!</h3>
-              <p class="text-sm text-neutral-500 dark:text-neutral-400">
+              <p class="text-sm text-neutral-500 text-neutral-400">
                 {workoutName()} • {formatTime(elapsed())}
               </p>
             </div>
 
             {/* Stats */}
             <div class="grid grid-cols-3 gap-2 mb-4">
-              <div class="bg-neutral-50 dark:bg-dark-surface rounded-xl p-3 text-center">
+              <div class="bg-[#1a1a1a] bg-[#1a1a1a] rounded-xl p-3 text-center">
                 <p class="text-lg font-bold text-primary">
                   {exercises().reduce((sum, ex) => sum + ex.sets.filter(s => s.is_completed).reduce((s, set) => s + (set.weight || 0) * (set.reps || 0), 0), 0)}
                 </p>
                 <p class="text-[10px] text-neutral-500">Volume</p>
               </div>
-              <div class="bg-neutral-50 dark:bg-dark-surface rounded-xl p-3 text-center">
+              <div class="bg-[#1a1a1a] bg-[#1a1a1a] rounded-xl p-3 text-center">
                 <p class="text-lg font-bold text-primary">{exercises().length}</p>
                 <p class="text-[10px] text-neutral-500">Exercises</p>
               </div>
-              <div class="bg-neutral-50 dark:bg-dark-surface rounded-xl p-3 text-center">
+              <div class="bg-[#1a1a1a] bg-[#1a1a1a] rounded-xl p-3 text-center">
                 <p class="text-lg font-bold text-primary">
                   {exercises().reduce((sum, ex) => sum + ex.sets.filter(s => s.is_completed).length, 0)}
                 </p>
@@ -820,7 +820,7 @@ export default function WorkoutPage() {
                       const ex = exercises().find(e => e.exercise_id === pr.exercise_id)
                       const label = pr.type === 'weight' ? 'kg' : pr.type === 'reps' ? 'reps' : 'vol'
                       return (
-                        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-2.5 flex items-center justify-between">
+                        <div class="bg-yellow-50 bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-2.5 flex items-center justify-between">
                           <span class="font-medium text-sm">{ex?.exercise_name || 'Exercise'}</span>
                           <span class="text-xs font-bold text-yellow-700 dark:text-yellow-400">
                             {pr.type === 'weight' ? 'Weight PR' : pr.type === 'reps' ? 'Reps PR' : 'Volume PR'}
@@ -838,12 +838,12 @@ export default function WorkoutPage() {
             <div class="space-y-2 mb-4 max-h-[30vh] overflow-y-auto">
               <For each={exercises()}>
                 {(ex) => (
-                  <div class="bg-neutral-50 dark:bg-dark-surface rounded-xl p-3">
+                  <div class="bg-[#1a1a1a] bg-[#1a1a1a] rounded-xl p-3">
                     <p class="font-medium text-sm">{ex.exercise_name}</p>
                     <div class="flex gap-2 mt-1 flex-wrap">
                       <For each={ex.sets.filter(s => s.is_completed)}>
                         {(set) => (
-                          <span class="text-xs bg-white dark:bg-dark-bg px-2 py-0.5 rounded-md">
+                          <span class="text-xs bg-white bg-[#0a0a0a] px-2 py-0.5 rounded-md">
                             {set.weight || '-'}×{set.reps || '-'}
                           </span>
                         )}
@@ -881,7 +881,7 @@ export default function WorkoutPage() {
         <div class="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
           <div class="card w-full max-w-sm p-6">
             <h3 class="text-lg font-bold mb-2">Save as Routine</h3>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+            <p class="text-sm text-neutral-500 text-neutral-400 mb-4">
               Create a reusable routine from this workout
             </p>
             <input

@@ -4,14 +4,10 @@
 
 @layer base {
   body {
-    @apply bg-neutral-50 text-neutral-900 antialiased;
+    @apply bg-[#0a0a0a] text-white antialiased;
     -webkit-tap-highlight-color: transparent;
   }
-  
-  .dark body {
-    @apply bg-dark-bg text-white;
-  }
-  
+
   * {
     @apply scrollbar-thin;
   }
@@ -19,98 +15,67 @@
 
 @layer components {
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-neutral-100 overflow-hidden;
+    @apply bg-[#161616] rounded-2xl border border-[#262626] overflow-hidden;
   }
-  
-  .dark .card {
-    @apply bg-dark-card border-dark-border;
-  }
-  
+
   .btn-primary {
-    @apply bg-primary text-white font-semibold py-3 px-6 rounded-xl 
-           active:scale-[0.98] transition-transform duration-150 
-           disabled:opacity-50 disabled:pointer-events-none;
+    @apply bg-white text-black font-semibold py-3 px-6 rounded-2xl
+           active:scale-[0.97] transition-all duration-150
+           disabled:opacity-40 disabled:pointer-events-none;
   }
-  
+
   .btn-secondary {
-    @apply bg-neutral-100 text-neutral-900 font-semibold py-3 px-6 rounded-xl 
-           active:scale-[0.98] transition-transform duration-150;
+    @apply bg-[#1f1f1f] text-white font-medium py-3 px-6 rounded-2xl
+           border border-[#333] active:scale-[0.97] transition-all duration-150;
   }
-  
-  .dark .btn-secondary {
-    @apply bg-dark-surface text-white;
-  }
-  
+
   .btn-ghost {
-    @apply text-neutral-600 font-medium py-2 px-4 rounded-lg 
-           active:bg-neutral-100 transition-colors;
+    @apply text-neutral-400 font-medium py-2 px-4 rounded-xl
+           hover:text-white transition-colors;
   }
-  
-  .dark .btn-ghost {
-    @apply text-neutral-300 active:bg-dark-surface;
-  }
-  
+
   .input {
-    @apply w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 
-           text-neutral-900 placeholder-neutral-400
-           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+    @apply w-full bg-[#1a1a1a] border border-[#333] rounded-2xl px-4 py-3.5
+           text-white placeholder-neutral-500
+           focus:outline-none focus:border-[#555]
            transition-all duration-200;
   }
-  
-  .dark .input {
-    @apply bg-dark-surface border-dark-border text-white placeholder-neutral-500
-           focus:ring-primary/30 focus:border-primary;
-  }
-  
+
   .bottom-sheet {
-    @apply fixed inset-x-0 bottom-0 bg-white rounded-t-3xl shadow-2xl 
+    @apply fixed inset-x-0 bottom-0 bg-[#161616] rounded-t-3xl
            transform transition-transform duration-300 z-50 max-h-[85vh] overflow-auto;
   }
-  
-  .dark .bottom-sheet {
-    @apply bg-dark-card;
-  }
-  
+
   .nav-item {
-    @apply flex flex-col items-center justify-center gap-0.5 py-2 px-3 
-           text-neutral-400 transition-colors;
+    @apply flex flex-col items-center justify-center gap-1 py-2 px-3
+           text-neutral-500 transition-colors;
   }
-  
+
   .nav-item.active {
-    @apply text-primary;
+    @apply text-white;
   }
-  
-  .dark .nav-item {
-    @apply text-neutral-500;
-  }
-  
-  .dark .nav-item.active {
-    @apply text-primary;
-  }
-  
+
   .exercise-card {
-    @apply p-4 bg-white rounded-xl border border-neutral-100 
-           active:bg-neutral-50 transition-colors;
+    @apply p-4 bg-[#161616] rounded-2xl border border-[#262626]
+           active:bg-[#1f1f1f] transition-colors;
   }
-  
-  .dark .exercise-card {
-    @apply bg-dark-card border-dark-border active:bg-dark-surface;
-  }
-  
+
   .stat-card {
-    @apply p-4 bg-primary/5 rounded-xl border border-primary/10;
+    @apply p-4 bg-[#1a1a1a] rounded-2xl border border-[#262626];
   }
-  
-  .dark .stat-card {
-    @apply bg-primary/10 border-primary/20;
-  }
-  
+
   .set-row {
-    @apply flex items-center gap-3 p-3 bg-neutral-50 rounded-xl;
+    @apply flex items-center gap-3 p-3 bg-[#1a1a1a] rounded-xl;
   }
-  
-  .dark .set-row {
-    @apply bg-dark-surface;
+
+  .pill {
+    @apply px-3 py-1.5 rounded-full text-xs font-medium
+           bg-[#1f1f1f] text-neutral-300 border border-[#333]
+           transition-colors;
+  }
+
+  .pill.active {
+    @apply bg-white text-black border-white;
   }
 }
 
@@ -118,17 +83,21 @@
   .safe-area-inset-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  
+
   .safe-area-inset-top {
     padding-top: env(safe-area-inset-top, 0px);
   }
-  
+
   .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: transparent transparent;
   }
-  
+
   .scrollbar-thin:hover {
-    scrollbar-color: rgba(0,0,0,0.2) transparent;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+  }
+
+  .text-balance {
+    text-wrap: balance;
   }
 }

@@ -283,13 +283,13 @@ export default function HevyImportPage() {
       <div class="flex items-center gap-3">
         <button
           onClick={() => navigate('/tools')}
-          class="p-2 hover:bg-neutral-100 dark:hover:bg-dark-surface rounded-xl transition-colors"
+          class="p-2 hover:bg-[#262626] dark:hover:bg-dark-surface rounded-xl transition-colors"
         >
           <ArrowLeft class="w-5 h-5" />
         </button>
         <div>
           <h2 class="text-xl font-bold">Import from Hevy</h2>
-          <p class="text-sm text-neutral-500 dark:text-neutral-400">
+          <p class="text-sm text-neutral-500 text-neutral-400">
             Import your workout history from a Hevy CSV export
           </p>
         </div>
@@ -302,7 +302,7 @@ export default function HevyImportPage() {
             class={`border-2 border-dashed rounded-2xl p-8 text-center transition-colors ${
               dragActive()
                 ? 'border-primary bg-primary/5'
-                : 'border-neutral-200 dark:border-dark-border'
+                : 'border-[#333] border-[#262626]'
             }`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -312,7 +312,7 @@ export default function HevyImportPage() {
               <Upload class="w-8 h-8 text-primary" />
             </div>
             <p class="font-medium mb-1">Drop your Hevy CSV here</p>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+            <p class="text-sm text-neutral-500 text-neutral-400 mb-4">
               or click to browse files
             </p>
             <label class="btn-primary py-2 px-4 text-sm inline-flex items-center gap-2 cursor-pointer">
@@ -337,7 +337,7 @@ export default function HevyImportPage() {
               </div>
               <div class="flex-1 min-w-0">
                 <p class="font-medium truncate">{file()!.name}</p>
-                <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                <p class="text-sm text-neutral-500 text-neutral-400">
                   {(file()!.size / 1024).toFixed(1)} KB
                 </p>
               </div>
@@ -352,11 +352,11 @@ export default function HevyImportPage() {
             {/* Preview */}
             <Show when={csvPreview()}>
               <div class="mb-4">
-                <p class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-2 uppercase tracking-wider">
+                <p class="text-xs font-medium text-neutral-500 text-neutral-400 mb-2 uppercase tracking-wider">
                   Preview (first 20 lines)
                 </p>
-                <div class="bg-neutral-50 dark:bg-dark-surface rounded-xl p-3 overflow-x-auto">
-                  <pre class="text-xs text-neutral-600 dark:text-neutral-300 whitespace-pre-wrap break-all">
+                <div class="bg-[#1a1a1a] bg-[#1a1a1a] rounded-xl p-3 overflow-x-auto">
+                  <pre class="text-xs text-neutral-300 text-neutral-300 whitespace-pre-wrap break-all">
                     {csvPreview().split('\n').slice(0, 20).join('\n')}
                   </pre>
                 </div>
@@ -384,7 +384,7 @@ export default function HevyImportPage() {
 
       {/* Error */}
       <Show when={error()}>
-        <div class="card p-4 bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+        <div class="card p-4 bg-red-50 bg-red-900/20 border-red-200 dark:border-red-800">
           <div class="flex items-start gap-3">
             <AlertCircle class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
             <div>
@@ -401,10 +401,10 @@ export default function HevyImportPage() {
           <Loader2 class="w-10 h-10 text-primary mx-auto mb-4 animate-spin" />
           <p class="font-medium">Importing your workouts...</p>
           <Show when={progress().total > 0}>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+            <p class="text-sm text-neutral-500 text-neutral-400 mt-1">
               Batch {progress().current} of {progress().total}
             </p>
-            <div class="w-full bg-neutral-200 dark:bg-dark-border rounded-full h-2 mt-3 overflow-hidden">
+            <div class="w-full bg-[#333] dark:bg-dark-border rounded-full h-2 mt-3 overflow-hidden">
               <div
                 class="bg-primary h-2 rounded-full transition-all duration-300"
                 style={{
@@ -424,37 +424,37 @@ export default function HevyImportPage() {
               <CheckCircle class="w-8 h-8 text-primary" />
               <div>
                 <h3 class="text-lg font-bold">Import Complete!</h3>
-                <p class="text-sm text-neutral-600 dark:text-neutral-300">
+                <p class="text-sm text-neutral-300 text-neutral-300">
                   Your Hevy workouts have been imported successfully
                 </p>
               </div>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
-              <div class="bg-white dark:bg-dark-bg rounded-xl p-3 text-center">
+              <div class="bg-white bg-[#0a0a0a] rounded-xl p-3 text-center">
                 <Calendar class="w-5 h-5 text-primary mx-auto mb-1" />
                 <p class="text-2xl font-bold">{result()?.workoutsCreated}</p>
-                <p class="text-xs text-neutral-500 dark:text-neutral-400">Workouts</p>
+                <p class="text-xs text-neutral-500 text-neutral-400">Workouts</p>
               </div>
-              <div class="bg-white dark:bg-dark-bg rounded-xl p-3 text-center">
+              <div class="bg-white bg-[#0a0a0a] rounded-xl p-3 text-center">
                 <Dumbbell class="w-5 h-5 text-primary mx-auto mb-1" />
                 <p class="text-2xl font-bold">{result()?.setsCreated}</p>
-                <p class="text-xs text-neutral-500 dark:text-neutral-400">Sets</p>
+                <p class="text-xs text-neutral-500 text-neutral-400">Sets</p>
               </div>
-              <div class="bg-white dark:bg-dark-bg rounded-xl p-3 text-center">
+              <div class="bg-white bg-[#0a0a0a] rounded-xl p-3 text-center">
                 <p class="text-2xl font-bold">{result()?.exercisesMapped}</p>
-                <p class="text-xs text-neutral-500 dark:text-neutral-400">Exercises Matched</p>
+                <p class="text-xs text-neutral-500 text-neutral-400">Exercises Matched</p>
               </div>
-              <div class="bg-white dark:bg-dark-bg rounded-xl p-3 text-center">
+              <div class="bg-white bg-[#0a0a0a] rounded-xl p-3 text-center">
                 <p class="text-2xl font-bold">{result()?.exercisesCreated}</p>
-                <p class="text-xs text-neutral-500 dark:text-neutral-400">New Exercises</p>
+                <p class="text-xs text-neutral-500 text-neutral-400">New Exercises</p>
               </div>
             </div>
           </div>
 
           {/* Errors */}
           <Show when={result()?.errors && result()!.errors!.length > 0}>
-            <div class="card p-4 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+            <div class="card p-4 bg-yellow-50 bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
               <div class="flex items-start gap-3">
                 <AlertCircle class="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
                 <div>
@@ -494,7 +494,7 @@ export default function HevyImportPage() {
       <Show when={!file() && !result()}>
         <div class="card p-4">
           <h3 class="font-semibold mb-3">How to export from Hevy</h3>
-          <ol class="space-y-2 text-sm text-neutral-600 dark:text-neutral-300">
+          <ol class="space-y-2 text-sm text-neutral-300 text-neutral-300">
             <li class="flex gap-2">
               <span class="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">1</span>
               Open the Hevy app and go to <strong>Profile → Settings</strong>
@@ -505,7 +505,7 @@ export default function HevyImportPage() {
             </li>
             <li class="flex gap-2">
               <span class="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">3</span>
-              Save the <code class="bg-neutral-100 dark:bg-dark-surface px-1.5 py-0.5 rounded text-xs">workout_data.csv</code> file
+              Save the <code class="bg-[#262626] bg-[#1a1a1a] px-1.5 py-0.5 rounded text-xs">workout_data.csv</code> file
             </li>
             <li class="flex gap-2">
               <span class="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold flex-shrink-0">4</span>

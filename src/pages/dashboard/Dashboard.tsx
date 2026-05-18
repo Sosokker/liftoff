@@ -1,68 +1,255 @@
-import { createSignal, createEffect, Show, For } from 'solid-js'
+import { createSignal, createEffect, For } from 'solid-js'
 import { useNavigate } from '@solidjs/router'
-import { useAuth } from '../../stores/authStore'
-import { apiFetch } from '../../stores/authStore'
-import { 
-  Dumbbell, 
-  Clock, 
-  Calendar, 
+import { useAuth, apiFetch } from '../../stores/authStore'
+import {
+  Dumbbell,
   Flame,
+  ChevronLeft,
   ChevronRight,
-  Play,
-  Wrench,
-  User
+  Pencil,
+  Settings,
+  Play
 } from 'lucide-solid'
 
-interface DashboardStats {
-  totalWorkouts: number
-  thisWeekWorkouts: number
-  currentStreak: number
-  totalVolume: number
-  recentWorkouts: any[]
+// ─── Helpers ───
+
+function getMonthLabels(weeks: Date[][]) {
+  const labels: { label: string; index: number }[] = []
+  let currentMonth = -1
+  weeks.forEach((week, i) => {
+    const firstDay = week[0]
+    if (firstDay.getMonth() !== currentMonth) {
+      currentMonth = firstDay.getMonth()
+      labels.push({
+        label: firstDay.toLocaleDateString('en', { month: 'short' }),
+        index: i
+      })
+    }
+  })
+  return labels
 }
+
+function getWeeksForGrid(monthsBack = 6) {
+  const weeks: Date[][] = []
+  const endDate = new Date()
+  const startDate = new Date()
+  startDate.setMonth(startDate.getMonth() - monthsBack)
+  startDate.setDate(startDate.getDate() - startDate.getDay())
+
+  let currentWeek: Date[] = []
+  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    currentWeek.push(new Date(d))
+    if (currentWeek.length === 7) {
+      weeks.push(currentWeek)
+      currentWeek = []
+    }
+  }
+  if (currentWeek.length > 0) {
+    while (currentWeek.length < 7) {
+      const last = new Date(currentWeek[currentWeek.length - 1])
+      last.setDate(last.getDate() + 1)
+      currentWeek.push(last)
+    }
+    weeks.push(currentWeek)
+  }
+  return weeks
+}
+
+function formatDateKey(d: Date) {
+  return d.toISOString().split('T')[0]
+}
+
+function getDayName(dayIndex: number) {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  return days[dayIndex]
+}
+
+// ─── Contribution Grid ───
+
+function ContributionGrid(props: {
+  workoutDates: Set<string>
+  onDayClick?: (date: Date) => void
+}) {
+  const weeks = getWeeksForGrid(6)
+  const monthLabels = getMonthLabels(weeks)
+  const today = formatDateKey(new Date())
+
+  const getIntensity = (date: Date) => {
+    const key = formatDateKey(date)
+    if (props.workoutDates.has(key)) return 'high'
+    return 'none'
+  }
+
+  return (
+    <div>
+      {/* Month labels */}
+      <div class="flex mb-1 pl-8">
+        {monthLabels.map((m) => (
+          <span
+            class="text-[10px] text-neutral-500 absolute"
+            style={{ left: `${m.index * 16 + 32}px` }}
+          >
+            {m.label}
+          </span>
+        ))}
+      </div>
+
+      <div class="flex gap-[3px]">
+        {/* Day labels */}
+        <div class="flex flex-col gap-[3px] mr-1">
+          {[1, 3, 5].map(dayIdx => (
+            <span class="text-[9px] text-neutral-500 h-[12px] leading-[12px]">
+              {getDayName(dayIdx)}
+            </span>
+          ))}
+        </div>
+
+        {/* Grid */}
+        <div class="flex gap-[3px] overflow-x-auto pb-1">
+          <For each={weeks}>
+            {(week) => (
+              <div class="flex flex-col gap-[3px]">
+                <For each={week}>
+                  {(day) => {
+                    const intensity = getIntensity(day)
+                    const isToday = formatDateKey(day) === today
+                    return (
+                      <button
+                        onClick={() => props.onDayClick?.(day)}
+                        class={`w-[12px] h-[12px] rounded-sm transition-all duration-200 ${
+                          intensity === 'high'
+                            ? 'bg-[#ff6b6b]'
+                            : isToday
+                              ? 'bg-[#ff6b6b]/60 ring-1 ring-[#ff6b6b]'
+                              : 'bg-[#262626]'
+                        }`}
+                        title={day.toLocaleDateString()}
+                      />
+                    )
+                  }}
+                </For>
+              </div>
+            )}
+          </For>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Monthly Calendar ───
+
+function MonthlyCalendar(props: {
+  year: number
+  month: number
+  workoutDates: Set<string>
+  selectedDate: Date | null
+  onSelectDate: (date: Date) => void
+}) {
+  const daysInMonth = new Date(props.year, props.month + 1, 0).getDate()
+  const firstDayOfMonth = new Date(props.year, props.month, 1).getDay()
+
+  const isWorkoutDay = (day: number) => {
+    const key = `${props.year}-${String(props.month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    return props.workoutDates.has(key)
+  }
+
+  const isSelected = (day: number) => {
+    if (!props.selectedDate) return false
+    return (
+      props.selectedDate.getDate() === day &&
+      props.selectedDate.getMonth() === props.month &&
+      props.selectedDate.getFullYear() === props.year
+    )
+  }
+
+  const isToday = (day: number) => {
+    const now = new Date()
+    return (
+      now.getDate() === day &&
+      now.getMonth() === props.month &&
+      now.getFullYear() === props.year
+    )
+  }
+
+  return (
+    <div>
+      {/* Day headers */}
+      <div class="grid grid-cols-7 gap-1 mb-3">
+        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
+          <div class="text-center text-[10px] text-neutral-500 font-medium">{d}</div>
+        ))}
+      </div>
+
+      {/* Days */}
+      <div class="grid grid-cols-7 gap-1">
+        {/* Offset for first day (Mon=0 in our display) */}
+        <For each={Array((firstDayOfMonth + 6) % 7).fill(0)}>
+          {() => <div />}
+        </For>
+
+        <For each={Array(daysInMonth).fill(0).map((_, i) => i + 1)}>
+          {(day) => {
+            const hasWorkout = isWorkoutDay(day)
+            const selected = isSelected(day)
+            const today = isToday(day)
+
+            return (
+              <button
+                onClick={() => props.onSelectDate(new Date(props.year, props.month, day))}
+                class={`aspect-square rounded-xl flex flex-col items-center justify-center text-sm transition-all duration-150 ${
+                  selected
+                    ? 'bg-[#ff6b6b] text-white'
+                    : today
+                      ? 'bg-white/10 text-white'
+                      : hasWorkout
+                        ? 'text-white'
+                        : 'text-neutral-400 hover:bg-white/5'
+                }`}
+              >
+                {day}
+                {hasWorkout && !selected && (
+                  <div class="w-1 h-1 rounded-full bg-[#ff6b6b] mt-0.5" />
+                )}
+              </button>
+            )
+          }}
+        </For>
+      </div>
+    </div>
+  )
+}
+
+// ─── Main Page ───
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [stats, setStats] = createSignal<DashboardStats>({
-    totalWorkouts: 0,
-    thisWeekWorkouts: 0,
-    currentStreak: 0,
-    totalVolume: 0,
-    recentWorkouts: []
-  })
-  const [isLoading, setIsLoading] = createSignal(true)
+
+  const [workoutDates, setWorkoutDates] = createSignal<Set<string>>(new Set())
+  const [currentStreak, setCurrentStreak] = createSignal(0)
+  const [totalWorkouts, setTotalWorkouts] = createSignal(0)
+  const [, setIsLoading] = createSignal(true)
+
+  const [calendarMonth, setCalendarMonth] = createSignal(new Date().getMonth())
+  const [calendarYear, setCalendarYear] = createSignal(new Date().getFullYear())
+  const [selectedDate, setSelectedDate] = createSignal<Date | null>(new Date())
 
   createEffect(async () => {
     if (!user()) {
       navigate('/login')
       return
     }
-    
+
     try {
-      const [workoutsRes, streakRes] = await Promise.all([
-        apiFetch('/api/workouts?limit=5'),
+      const [datesRes, streakRes] = await Promise.all([
+        apiFetch('/api/analytics/workout-dates?months=6'),
         apiFetch('/api/analytics/streak')
       ])
 
-      const totalVolume = workoutsRes.reduce((sum: number, w: any) => {
-        return sum + (parseFloat(w.total_volume) || 0)
-      }, 0)
-
-      // Calculate this week
-      const now = new Date()
-      const weekStart = new Date(now.setDate(now.getDate() - now.getDay()))
-      const thisWeek = workoutsRes.filter((w: any) => 
-        new Date(w.start_time) >= weekStart
-      )
-
-      setStats({
-        totalWorkouts: workoutsRes.length,
-        thisWeekWorkouts: thisWeek.length,
-        currentStreak: streakRes.currentStreak || 0,
-        totalVolume: Math.round(totalVolume),
-        recentWorkouts: workoutsRes.slice(0, 3)
-      })
+      setWorkoutDates(new Set(datesRes as string[]))
+      setCurrentStreak(streakRes.currentStreak || 0)
+      setTotalWorkouts(streakRes.totalWorkouts || 0)
     } catch (error) {
       console.error('Dashboard load error:', error)
     } finally {
@@ -70,145 +257,139 @@ export default function DashboardPage() {
     }
   })
 
+  function changeMonth(delta: number) {
+    let newMonth = calendarMonth() + delta
+    let newYear = calendarYear()
+    if (newMonth > 11) {
+      newMonth = 0
+      newYear++
+    } else if (newMonth < 0) {
+      newMonth = 11
+      newYear--
+    }
+    setCalendarMonth(newMonth)
+    setCalendarYear(newYear)
+  }
+
+  function goToWorkout() {
+    navigate('/workout')
+  }
+
+  const monthYearLabel = () => {
+    return new Date(calendarYear(), calendarMonth()).toLocaleDateString('en', {
+      month: 'long',
+      year: 'numeric'
+    })
+  }
+
   return (
-    <div class="px-4 py-6 space-y-6">
-      {/* Welcome */}
-      <div>
-        <h2 class="text-2xl font-bold">
-          Hello, {user()?.username || 'Athlete'}! 👋
-        </h2>
-        <p class="text-neutral-500 dark:text-neutral-400 mt-1">
-          Ready to crush your goals today?
-        </p>
-      </div>
-
-      {/* Quick Actions */}
-      <div class="grid grid-cols-2 gap-3">
-        <button 
-          onClick={() => navigate('/workout')}
-          class="card p-4 text-left active:scale-[0.98] transition-transform"
-        >
-          <div class="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center mb-3">
-            <Play class="w-5 h-5 text-primary" />
+    <div class="px-4 pt-4 pb-6 space-y-6">
+      {/* Header */}
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center">
+            <Dumbbell class="w-5 h-5 text-white" />
           </div>
-          <p class="font-semibold text-sm">Start Workout</p>
-          <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Empty or routine</p>
-        </button>
-        <button 
-          onClick={() => navigate('/routines')}
-          class="card p-4 text-left active:scale-[0.98] transition-transform"
-        >
-          <div class="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center mb-3">
-            <Dumbbell class="w-5 h-5 text-accent" />
-          </div>
-          <p class="font-semibold text-sm">Routines</p>
-          <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Your templates</p>
-        </button>
-        <button 
-          onClick={() => navigate('/tools')}
-          class="card p-4 text-left active:scale-[0.98] transition-transform"
-        >
-          <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mb-3">
-            <Wrench class="w-5 h-5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <p class="font-semibold text-sm">Tools</p>
-          <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Import, calc, export</p>
-        </button>
-        <button 
-          onClick={() => navigate('/body')}
-          class="card p-4 text-left active:scale-[0.98] transition-transform"
-        >
-          <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center mb-3">
-            <User class="w-5 h-5 text-purple-600 dark:text-purple-400" />
-          </div>
-          <p class="font-semibold text-sm">Body</p>
-          <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Measurements</p>
-        </button>
-      </div>
-
-      {/* Stats Overview */}
-      <div>
-        <h3 class="text-lg font-semibold mb-3">This Week</h3>
-        <div class="grid grid-cols-2 gap-3">
-          <div class="stat-card">
-            <div class="flex items-center gap-2 mb-1">
-              <Calendar class="w-4 h-4 text-primary" />
-              <span class="text-xs font-medium text-primary">Workouts</span>
-            </div>
-            <p class="text-2xl font-bold">{stats().thisWeekWorkouts}</p>
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">this week</p>
-          </div>
-          <div class="stat-card">
-            <div class="flex items-center gap-2 mb-1">
-              <Flame class="w-4 h-4 text-accent" />
-              <span class="text-xs font-medium text-accent">Streak</span>
-            </div>
-            <p class="text-2xl font-bold">{stats().currentStreak}</p>
-            <p class="text-xs text-neutral-500 dark:text-neutral-400">days</p>
+          <div>
+            <h1 class="text-xl font-bold">Fitness</h1>
+            <p class="text-sm text-neutral-500">Exercise Lets go</p>
           </div>
         </div>
+        <button
+          onClick={() => navigate('/settings')}
+          class="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+        >
+          <Settings class="w-5 h-5 text-neutral-400" />
+        </button>
       </div>
 
-      {/* Recent Workouts */}
-      <div>
-        <div class="flex items-center justify-between mb-3">
-          <h3 class="text-lg font-semibold">Recent Workouts</h3>
-          <button 
-            onClick={() => navigate('/workout/history')}
-            class="text-sm text-primary font-medium flex items-center gap-0.5"
+      {/* Activity Grid Card */}
+      <div class="card p-4 space-y-4">
+        <ContributionGrid
+          workoutDates={workoutDates()}
+          onDayClick={(date) => {
+            setCalendarMonth(date.getMonth())
+            setCalendarYear(date.getFullYear())
+            setSelectedDate(date)
+          }}
+        />
+
+        {/* Stats Row */}
+        <div class="flex items-center gap-3">
+          <div class="pill">
+            No Streak Goal
+          </div>
+          <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1f1f1f] border border-[#333]">
+            <Flame class="w-3.5 h-3.5 text-[#ff6b6b]" />
+            <span class="text-xs font-medium">{currentStreak()}</span>
+          </div>
+          <div class="flex-1" />
+          <button
+            onClick={goToWorkout}
+            class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
           >
-            View all <ChevronRight class="w-4 h-4" />
+            <Pencil class="w-4 h-4 text-neutral-400" />
           </button>
         </div>
+      </div>
 
-        <Show when={!isLoading()} fallback={
-          <div class="flex justify-center py-8">
-            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+      {/* Start Workout CTA */}
+      <button
+        onClick={goToWorkout}
+        class="w-full py-4 bg-white text-black rounded-2xl font-semibold text-sm
+               flex items-center justify-center gap-2
+               active:scale-[0.97] transition-transform"
+      >
+        <Play class="w-4 h-4" />
+        Start Workout
+      </button>
+
+      {/* Monthly Calendar */}
+      <div class="card p-4">
+        <MonthlyCalendar
+          year={calendarYear()}
+          month={calendarMonth()}
+          workoutDates={workoutDates()}
+          selectedDate={selectedDate()}
+          onSelectDate={setSelectedDate}
+        />
+
+        {/* Month Navigation */}
+        <div class="flex items-center justify-between mt-4 pt-4 border-t border-[#262626]">
+          <div class="flex items-center gap-2 text-sm font-medium">
+            <div class="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center">
+              <ChevronLeft class="w-4 h-4" />
+            </div>
+            <span class="text-neutral-400">{monthYearLabel()}</span>
           </div>
-        }>
-          <Show when={stats().recentWorkouts.length > 0} fallback={
-            <div class="card p-6 text-center">
-              <Dumbbell class="w-8 h-8 text-neutral-300 dark:text-neutral-600 mx-auto mb-2" />
-              <p class="text-sm text-neutral-500 dark:text-neutral-400">No workouts yet</p>
-              <button 
-                onClick={() => navigate('/workout')}
-                class="text-primary font-medium text-sm mt-2"
-              >
-                Start your first workout
-              </button>
-            </div>
-          }>
-            <div class="space-y-2">
-              <For each={stats().recentWorkouts}>
-                {(workout) => (
-                  <button 
-                    onClick={() => navigate(`/workout/history`)}
-                    class="card p-4 w-full text-left active:bg-neutral-50 dark:active:bg-dark-surface transition-colors"
-                  >
-                    <div class="flex items-center justify-between">
-                      <div>
-                        <p class="font-semibold">{workout.name}</p>
-                        <div class="flex items-center gap-3 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                          <span class="flex items-center gap-1">
-                            <Calendar class="w-3 h-3" />
-                            {new Date(workout.start_time).toLocaleDateString()}
-                          </span>
-                          <Show when={workout.duration_seconds}>
-                            <span class="flex items-center gap-1">
-                              <Clock class="w-3 h-3" />
-                              {Math.floor(workout.duration_seconds / 60)}m
-                            </span>
-                          </Show>
-                        </div>
-                      </div>
-                      <ChevronRight class="w-5 h-5 text-neutral-400" />
-                    </div>
-                  </button>
-                )}
-              </For>
-            </div>
-          </Show>
-        </Show>
+          <div class="flex items-center gap-2">
+            <button
+              onClick={() => changeMonth(-1)}
+              class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+            >
+              <ChevronLeft class="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => changeMonth(1)}
+              class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+            >
+              <ChevronRight class="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div class="grid grid-cols-2 gap-3">
+        <div class="card p-4">
+          <p class="text-xs text-neutral-500 mb-1">Total Workouts</p>
+          <p class="text-2xl font-bold">{totalWorkouts()}</p>
+        </div>
+        <div class="card p-4">
+          <p class="text-xs text-neutral-500 mb-1">Current Streak</p>
+          <p class="text-2xl font-bold">{currentStreak()}</p>
+          <p class="text-xs text-neutral-500">days</p>
+        </div>
       </div>
     </div>
   )

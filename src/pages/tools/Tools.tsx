@@ -17,7 +17,7 @@ export default function ToolsPage() {
       description: 'Import your workout history from a Hevy CSV export',
       icon: Upload,
       path: '/tools/import-hevy',
-      color: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+      color: 'bg-blue-100 text-blue-600 bg-blue-900/30 dark:text-blue-400'
     },
     {
       title: 'Export Data',
@@ -43,7 +43,7 @@ export default function ToolsPage() {
                 navigate(tool.path)
               }
             }}
-            class="card p-4 w-full text-left active:bg-neutral-50 dark:active:bg-dark-surface transition-colors"
+            class="card p-4 w-full text-left active:bg-[#1a1a1a] active:bg-[#1a1a1a] transition-colors"
           >
             <div class="flex items-center gap-4">
               <div class={`w-12 h-12 rounded-xl flex items-center justify-center ${tool.color}`}>
@@ -51,7 +51,7 @@ export default function ToolsPage() {
               </div>
               <div class="flex-1">
                 <h3 class="font-semibold">{tool.title}</h3>
-                <p class="text-sm text-neutral-500 dark:text-neutral-400">{tool.description}</p>
+                <p class="text-sm text-neutral-500 text-neutral-400">{tool.description}</p>
               </div>
               <ArrowRight class="w-5 h-5 text-neutral-400" />
             </div>

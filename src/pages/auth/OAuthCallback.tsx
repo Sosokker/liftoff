@@ -30,10 +30,10 @@ export default function OAuthCallbackPage() {
   })
 
   return (
-    <div class="flex items-center justify-center h-screen bg-neutral-50 dark:bg-dark-bg">
+    <div class="flex items-center justify-center h-screen bg-[#1a1a1a] bg-[#0a0a0a]">
       <div class="text-center">
         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
-        <p class="text-neutral-600 dark:text-neutral-400">Completing sign in...</p>
+        <p class="text-neutral-300 text-neutral-400">Completing sign in...</p>
       </div>
     </div>
   )
