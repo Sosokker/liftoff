@@ -208,280 +208,194 @@ tools.get('/export', async (c) => {
   return c.body(csv)
 })
 
-// Import workouts from Hevy CSV export
-// POST body: { csvText: string }
-tools.post('/import-hevy', async (c) => {
+// ───────────────────────────────────────────────
+// Batched Hevy import (avoids "Too many subrequests")
+// ───────────────────────────────────────────────
+
+interface HevySet {
+  setType: string
+  setIndex: number
+  reps: number | null
+  weightKg: number | null
+  rpe: number | null
+}
+
+interface HevyExercise {
+  title: string
+  notes: string
+  sets: HevySet[]
+}
+
+interface HevyWorkout {
+  title: string
+  startTime: string // ISO
+  endTime: string | null // ISO
+  description: string
+  exercises: HevyExercise[]
+}
+
+tools.post('/import-hevy-batch', async (c) => {
   const authHeader = c.req.header('Authorization')
   const token = authHeader!.split(' ')[1]
   const secret = getJwtSecret(c)
   const { payload } = await jwtVerify(token, secret, { clockTolerance: 60 })
   const userId = payload.userId as number
 
-  const { csvText } = await c.req.json()
-  if (!csvText || typeof csvText !== 'string') {
-    return c.json({ error: 'csvText is required' }, 400)
-  }
-
-  const lines = csvText.split('\n').filter(l => l.trim())
-  if (lines.length < 2) {
-    return c.json({ error: 'CSV is empty or missing header' }, 400)
-  }
-
-  // Parse header to get column indices
-  const headers = parseCSVLine(lines[0])
-  const colIndex: Record<string, number> = {}
-  headers.forEach((h, i) => { colIndex[h] = i })
-
-  const requiredCols = ['title', 'start_time', 'exercise_title', 'set_index', 'set_type']
-  for (const col of requiredCols) {
-    if (colIndex[col] === undefined) {
-      return c.json({ error: `Missing required column: ${col}` }, 400)
-    }
+  const body = await c.req.json() as { workouts: HevyWorkout[] }
+  const chunk = body.workouts || []
+  if (!Array.isArray(chunk) || chunk.length === 0) {
+    return c.json({ error: 'workouts array is required' }, 400)
   }
 
   const db = getDb()
 
-  // Load existing exercises for mapping
-  const existingExercises = await db.execute({
-    sql: 'SELECT id, name, muscle_group, equipment FROM exercises',
+  // 1️⃣  Fetch existing exercises  (1 subrequest)
+  const existing = await db.execute({
+    sql: 'SELECT id, name FROM exercises',
     args: []
   })
-  const exerciseMap = new Map<string, { id: number; name: string; muscle_group: string; equipment: string }>()
-  for (const row of existingExercises.rows) {
-    const name = String(row.name).toLowerCase()
-    exerciseMap.set(name, {
-      id: Number(row.id),
-      name: String(row.name),
-      muscle_group: String(row.muscle_group),
-      equipment: String(row.equipment || '')
-    })
-    // Also map normalized version (without equipment suffix)
-    const normalized = normalizeExerciseName(name).toLowerCase()
-    if (normalized !== name) {
-      exerciseMap.set(normalized, {
-        id: Number(row.id),
-        name: String(row.name),
-        muscle_group: String(row.muscle_group),
-        equipment: String(row.equipment || '')
-      })
+  const exerciseMap = new Map<string, { id: number; name: string }>()
+  const normalizedMap = new Map<string, { id: number }>()
+  for (const row of existing.rows) {
+    const name = String(row.name)
+    const lower = name.toLowerCase()
+    exerciseMap.set(lower, { id: Number(row.id), name })
+    const norm = normalizeExerciseName(lower)
+    if (!normalizedMap.has(norm)) normalizedMap.set(norm, { id: Number(row.id) })
+  }
+
+  // Resolve / create every exercise referenced in this chunk
+  const exerciseIdByTitle = new Map<string, number>() // original Hevy title → our exercise id
+  const toCreate: string[] = []
+
+  for (const w of chunk) {
+    for (const ex of w.exercises) {
+      const key = ex.title.toLowerCase()
+      if (exerciseIdByTitle.has(key)) continue
+
+      const exact = exerciseMap.get(key)
+      const norm = normalizedMap.get(normalizeExerciseName(key))
+      if (exact) {
+        exerciseIdByTitle.set(key, exact.id)
+      } else if (norm) {
+        exerciseIdByTitle.set(key, norm.id)
+      } else {
+        // fuzzy substring match
+        let found = false
+        for (const [existingNorm, info] of normalizedMap) {
+          if (existingNorm.includes(normalizeExerciseName(key)) || normalizeExerciseName(key).includes(existingNorm)) {
+            exerciseIdByTitle.set(key, info.id)
+            found = true
+            break
+          }
+        }
+        if (!found) toCreate.push(ex.title)
+      }
     }
   }
 
-  // Also build a map by normalized name for fuzzy matching
-  const normalizedExerciseMap = new Map<string, { id: number; name: string; muscle_group: string; equipment: string }>()
-  for (const row of existingExercises.rows) {
-    const normalized = normalizeExerciseName(String(row.name)).toLowerCase()
-    normalizedExerciseMap.set(normalized, {
-      id: Number(row.id),
-      name: String(row.name),
-      muscle_group: String(row.muscle_group),
-      equipment: String(row.equipment || '')
-    })
-  }
-
-  // Group rows by workout key (title + start_time)
-  interface HevySet {
-    exerciseTitle: string
-    supersetId: string
-    exerciseNotes: string
-    setIndex: number
-    setType: string
-    weightKg: number | null
-    reps: number | null
-    distanceKm: number | null
-    durationSeconds: number | null
-    rpe: number | null
-  }
-  interface HevyWorkout {
-    title: string
-    startTime: Date
-    endTime: Date | null
-    description: string
-    exercises: Map<string, HevySet[]> // key = exerciseTitle, value = sets
-  }
-
-  const workoutsMap = new Map<string, HevyWorkout>()
-
-  for (let i = 1; i < lines.length; i++) {
-    const fields = parseCSVLine(lines[i])
-    if (fields.length < headers.length) continue
-
-    const title = fields[colIndex['title']] || 'Workout'
-    const startTimeStr = fields[colIndex['start_time']]
-    const startTime = parseHevyDate(startTimeStr)
-    if (!startTime) continue
-
-    const workoutKey = `${title}|${startTimeStr}`
-    if (!workoutsMap.has(workoutKey)) {
-      const endTime = parseHevyDate(fields[colIndex['end_time']])
-      workoutsMap.set(workoutKey, {
-        title,
-        startTime,
-        endTime,
-        description: fields[colIndex['description']] || '',
-        exercises: new Map()
-      })
-    }
-
-    const workout = workoutsMap.get(workoutKey)!
-    const exerciseTitle = fields[colIndex['exercise_title']]
-    if (!exerciseTitle) continue
-
-    if (!workout.exercises.has(exerciseTitle)) {
-      workout.exercises.set(exerciseTitle, [])
-    }
-
-    const weightKg = fields[colIndex['weight_kg']]
-    const reps = fields[colIndex['reps']]
-    const distanceKm = fields[colIndex['distance_km']]
-    const durationSeconds = fields[colIndex['duration_seconds']]
-    const rpe = fields[colIndex['rpe']]
-
-    workout.exercises.get(exerciseTitle)!.push({
-      exerciseTitle,
-      supersetId: fields[colIndex['superset_id']] || '',
-      exerciseNotes: fields[colIndex['exercise_notes']] || '',
-      setIndex: parseInt(fields[colIndex['set_index']] || '0', 10) || 0,
-      setType: fields[colIndex['set_type']] || 'normal',
-      weightKg: weightKg ? parseFloat(weightKg) : null,
-      reps: reps ? parseInt(reps, 10) : null,
-      distanceKm: distanceKm ? parseFloat(distanceKm) : null,
-      durationSeconds: durationSeconds ? parseInt(durationSeconds, 10) : null,
-      rpe: rpe ? parseFloat(rpe) : null
-    })
-  }
-
-  let workoutsCreated = 0
+  // 2️⃣  Batch-create missing exercises  (1 subrequest)
   let exercisesCreated = 0
-  let setsCreated = 0
-  let exercisesMapped = 0
-  const errors: string[] = []
-
-  for (const [, workoutData] of workoutsMap) {
-    try {
-      // Calculate duration
-      let durationSeconds: number | null = null
-      if (workoutData.endTime) {
-        durationSeconds = Math.floor((workoutData.endTime.getTime() - workoutData.startTime.getTime()) / 1000)
-      }
-
-      // Insert workout
-      const workoutResult = await db.execute({
-        sql: 'INSERT INTO workouts (user_id, name, start_time, end_time, duration_seconds, notes) VALUES (?, ?, ?, ?, ?, ?)',
-        args: [
-          userId,
-          workoutData.title,
-          workoutData.startTime.toISOString(),
-          workoutData.endTime ? workoutData.endTime.toISOString() : null,
-          durationSeconds,
-          workoutData.description || null
-        ]
-      })
-      const workoutId = Number(workoutResult.lastInsertRowid)
-      workoutsCreated++
-
-      let exerciseOrderIndex = 0
-      for (const [exerciseTitle, sets] of workoutData.exercises) {
-        // Try to find or create exercise
-        let exerciseId: number
-        const normalizedHevyName = normalizeExerciseName(exerciseTitle).toLowerCase()
-        const exactMatch = exerciseMap.get(exerciseTitle.toLowerCase())
-        const normalizedMatch = normalizedExerciseMap.get(normalizedHevyName)
-
-        if (exactMatch) {
-          exerciseId = exactMatch.id
-          exercisesMapped++
-        } else if (normalizedMatch) {
-          exerciseId = normalizedMatch.id
-          exercisesMapped++
-        } else {
-          // Try fuzzy matching: check if any existing exercise normalized name contains the hevy name or vice versa
-          let fuzzyMatch: { id: number } | null = null
-          for (const [existingName, existing] of normalizedExerciseMap) {
-            if (existingName.includes(normalizedHevyName) || normalizedHevyName.includes(existingName)) {
-              fuzzyMatch = existing
-              break
-            }
-          }
-
-          if (fuzzyMatch) {
-            exerciseId = fuzzyMatch.id
-            exercisesMapped++
-          } else {
-            // Create custom exercise
-            const muscleGroup = guessMuscleGroup(exerciseTitle)
-            const equipment = extractEquipment(exerciseTitle)
-            const exResult = await db.execute({
-              sql: 'INSERT INTO exercises (user_id, name, muscle_group, equipment, instructions, is_custom) VALUES (?, ?, ?, ?, ?, 1)',
-              args: [userId, exerciseTitle, muscleGroup, equipment, null]
-            })
-            exerciseId = Number(exResult.lastInsertRowid)
-            exercisesCreated++
-
-            // Add to maps for subsequent lookups
-            exerciseMap.set(exerciseTitle.toLowerCase(), {
-              id: exerciseId,
-              name: exerciseTitle,
-              muscle_group: muscleGroup,
-              equipment
-            })
-            normalizedExerciseMap.set(normalizedHevyName, {
-              id: exerciseId,
-              name: exerciseTitle,
-              muscle_group: muscleGroup,
-              equipment
-            })
-          }
-        }
-
-        // Insert workout_exercise
-        const workoutExerciseNotes = sets.find(s => s.exerciseNotes)?.exerciseNotes || ''
-        const weResult = await db.execute({
-          sql: 'INSERT INTO workout_exercises (workout_id, exercise_id, order_index, notes) VALUES (?, ?, ?, ?)',
-          args: [workoutId, exerciseId, exerciseOrderIndex, workoutExerciseNotes || null]
-        })
-        const workoutExerciseId = Number(weResult.lastInsertRowid)
-        exerciseOrderIndex++
-
-        // Sort sets by set_index
-        sets.sort((a, b) => a.setIndex - b.setIndex)
-
-        // Insert sets
-        for (let setIdx = 0; setIdx < sets.length; setIdx++) {
-          const set = sets[setIdx]
-          await db.execute({
-            sql: `
-              INSERT INTO sets 
-              (workout_exercise_id, set_type, set_number, reps, weight, rpe, is_completed, completed_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            `,
-            args: [
-              workoutExerciseId,
-              mapSetType(set.setType),
-              setIdx + 1,
-              set.reps,
-              set.weightKg,
-              set.rpe,
-              1, // All imported sets are completed
-              workoutData.startTime.toISOString()
-            ]
-          })
-          setsCreated++
-        }
-      }
-    } catch (err: any) {
-      errors.push(`Failed to import workout "${workoutData.title}": ${err.message}`)
+  if (toCreate.length > 0) {
+    const stmts = toCreate.map(title => ({
+      sql: 'INSERT INTO exercises (user_id, name, muscle_group, equipment, instructions, is_custom) VALUES (?, ?, ?, ?, ?, 1) RETURNING id, name',
+      args: [userId, title, guessMuscleGroup(title), extractEquipment(title), null]
+    }))
+    const created = await db.batch(stmts)
+    for (let i = 0; i < created.length; i++) {
+      const row = created[i].rows[0]
+      const id = Number(row.id)
+      const name = String(row.name)
+      const key = name.toLowerCase()
+      exerciseIdByTitle.set(key, id)
+      exerciseMap.set(key, { id, name })
+      normalizedMap.set(normalizeExerciseName(key), { id })
+      exercisesCreated++
     }
   }
+
+  // 3️⃣  Batch-insert workouts  (1 subrequest)
+  const workoutStmts = chunk.map(w => {
+    const duration = w.endTime
+      ? Math.floor((new Date(w.endTime).getTime() - new Date(w.startTime).getTime()) / 1000)
+      : null
+    return {
+      sql: 'INSERT INTO workouts (user_id, name, start_time, end_time, duration_seconds, notes) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
+      args: [userId, w.title, w.startTime, w.endTime, duration, w.description || null]
+    }
+  })
+  const workoutResults = await db.batch(workoutStmts)
+  const workoutIds = workoutResults.map(r => Number(r.rows[0].id))
+
+  // 4️⃣  Batch-insert workout_exercises  (1 subrequest)
+  const weStmts: { sql: string; args: (string | number | null)[] }[] = []
+  for (let wi = 0; wi < chunk.length; wi++) {
+    const w = chunk[wi]
+    const workoutId = workoutIds[wi]
+    for (let ei = 0; ei < w.exercises.length; ei++) {
+      const ex = w.exercises[ei]
+      const exerciseId = exerciseIdByTitle.get(ex.title.toLowerCase())!
+      weStmts.push({
+        sql: 'INSERT INTO workout_exercises (workout_id, exercise_id, order_index, notes) VALUES (?, ?, ?, ?) RETURNING id',
+        args: [workoutId, exerciseId, ei, ex.notes || null]
+      })
+    }
+  }
+  const weResults = await db.batch(weStmts)
+
+  // Map workout_exercise IDs back to their (workoutIndex, exerciseIndex)
+  let weCursor = 0
+  const weIdByPath = new Map<string, number>() // "wi:ei" → workout_exercise_id
+  for (let wi = 0; wi < chunk.length; wi++) {
+    for (let ei = 0; ei < chunk[wi].exercises.length; ei++) {
+      weIdByPath.set(`${wi}:${ei}`, Number(weResults[weCursor].rows[0].id))
+      weCursor++
+    }
+  }
+
+  // 5️⃣  Batch-insert sets  (1 subrequest)
+  const setStmts: { sql: string; args: (string | number | null)[] }[] = []
+  for (let wi = 0; wi < chunk.length; wi++) {
+    const w = chunk[wi]
+    for (let ei = 0; ei < w.exercises.length; ei++) {
+      const ex = w.exercises[ei]
+      const weId = weIdByPath.get(`${wi}:${ei}`)!
+      // Sort by setIndex to preserve order
+      const sortedSets = [...ex.sets].sort((a, b) => a.setIndex - b.setIndex)
+      for (let si = 0; si < sortedSets.length; si++) {
+        const s = sortedSets[si]
+        setStmts.push({
+          sql: `
+            INSERT INTO sets
+            (workout_exercise_id, set_type, set_number, reps, weight, rpe, is_completed, completed_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          args: [
+            weId,
+            mapSetType(s.setType),
+            si + 1,
+            s.reps,
+            s.weightKg,
+            s.rpe,
+            1,
+            w.startTime
+          ]
+        })
+      }
+    }
+  }
+  if (setStmts.length > 0) await db.batch(setStmts)
+
+  const workoutsCreated = chunk.length
+  const exercisesMapped = chunk.reduce((sum, w) => sum + w.exercises.length, 0) - exercisesCreated
+  const setsCreated = setStmts.length
 
   return c.json({
     success: true,
     workoutsCreated,
     exercisesCreated,
     exercisesMapped,
-    setsCreated,
-    totalRowsParsed: lines.length - 1,
-    errors: errors.length > 0 ? errors : undefined
+    setsCreated
   })
 })
 
