@@ -1,0 +1,46 @@
+{
+  "name": "liftoff",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"bun run dev:server\" \"bun run dev:client\"",
+    "dev:client": "bunx vite",
+    "dev:server": "bunx tsx watch server/index.ts",
+    "build": "bunx tsc -b && bunx vite build",
+    "build:server": "bunx tsc -p tsconfig.server.json",
+    "preview": "bunx vite preview",
+    "start": "bun server/index.ts",
+    "setup:db": "bunx tsx server/setup.ts",
+    "deploy:api": "bunx wrangler deploy",
+    "deploy:api:staging": "bunx wrangler deploy --env staging",
+    "deploy:client": "bunx vite build && echo 'Deploy dist/ to your static host'",
+    "logs": "bunx wrangler tail",
+    "secrets:setup": "echo 'Run: wrangler secret put TURSO_URL && wrangler secret put TURSO_TOKEN && wrangler secret put JWT_SECRET'"
+  },
+  "dependencies": {
+    "@hono/node-server": "^2.0.2",
+    "@libsql/client": "^0.14.0",
+    "@solidjs/router": "^0.15.3",
+    "bcryptjs": "^2.4.3",
+    "hono": "^4.7.0",
+    "jose": "^5.9.6",
+    "lucide-solid": "^0.475.0",
+    "solid-js": "^1.9.12"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.13.1",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
+    "postcss": "^8.5.2",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^4.19.2",
+    "typescript": "~6.0.2",
+    "vite": "^6.1.0",
+    "vite-plugin-pwa": "^0.21.1",
+    "vite-plugin-solid": "^2.11.6",
+    "workbox-window": "^7.3.0",
+    "wrangler": "^4.91.0"
+  }
+}
