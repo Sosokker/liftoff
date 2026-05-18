@@ -70,6 +70,8 @@ export default function WorkoutPage() {
   const [isLoadingRoutine, setIsLoadingRoutine] = createSignal(false)
   const [prsDetected, setPrsDetected] = createSignal<Array<{exercise_id: number; type: string; value: number; previousBest?: number}>>([])
   const [showPRCelebration, setShowPRCelebration] = createSignal(false)
+  const [exerciseSearchQuery, setExerciseSearchQuery] = createSignal('')
+  const [exerciseMuscleFilter, setExerciseMuscleFilter] = createSignal('All')
 
   let timerInterval: number | null = null
 
@@ -92,6 +94,24 @@ export default function WorkoutPage() {
       console.error('Failed to fetch previous performance:', e)
     }
     return undefined
+  }
+
+  const filteredAvailableExercises = () => {
+    let filtered = availableExercises()
+
+    if (exerciseMuscleFilter() !== 'All') {
+      filtered = filtered.filter(ex => ex.muscle_group === exerciseMuscleFilter())
+    }
+
+    if (exerciseSearchQuery()) {
+      const query = exerciseSearchQuery().toLowerCase()
+      filtered = filtered.filter(ex =>
+        ex.name.toLowerCase().includes(query) ||
+        ex.muscle_group.toLowerCase().includes(query)
+      )
+    }
+
+    return filtered
   }
 
   // Load exercises
@@ -576,18 +596,41 @@ export default function WorkoutPage() {
       <Show when={showExercisePicker()}>
         <div class="fixed inset-0 z-50 bg-black/50 flex items-end" onClick={() => setShowExercisePicker(false)}>
           <div class="bottom-sheet w-full max-h-[70vh]" onClick={(e) => e.stopPropagation()}>
-            <div class="p-4 border-b border-neutral-100 dark:border-dark-border">
+            <div class="p-4 border-b border-neutral-100 dark:border-dark-border space-y-3">
               <div class="flex items-center justify-between">
                 <h3 class="font-semibold text-lg">Select Exercise</h3>
                 <button onClick={() => setShowExercisePicker(false)}>
                   <X class="w-5 h-5" />
                 </button>
               </div>
+              <input
+                type="text"
+                value={exerciseSearchQuery()}
+                onInput={(e) => setExerciseSearchQuery(e.currentTarget.value)}
+                class="input w-full text-sm"
+                placeholder="Search exercises..."
+              />
+              <div class="flex gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                <For each={['All', 'Chest', 'Back', 'Shoulders', 'Legs', 'Biceps', 'Triceps', 'Core', 'Glutes', 'Cardio']}>
+                  {(group) => (
+                    <button
+                      onClick={() => setExerciseMuscleFilter(group)}
+                      class={`px-2.5 py-1 rounded-full text-[10px] font-medium whitespace-nowrap transition-colors ${
+                        exerciseMuscleFilter() === group
+                          ? 'bg-primary text-white'
+                          : 'bg-neutral-100 dark:bg-dark-surface text-neutral-600 dark:text-neutral-400'
+                      }`}
+                    >
+                      {group}
+                    </button>
+                  )}
+                </For>
+              </div>
             </div>
-            <div class="p-4 space-y-2 overflow-auto max-h-[50vh]">
-              <For each={availableExercises()}>
+            <div class="p-4 space-y-2 overflow-auto max-h-[45vh]">
+              <For each={filteredAvailableExercises()}>
                 {(exercise) => (
-                  <button 
+                  <button
                     onClick={() => addExercise(exercise)}
                     class="exercise-card w-full text-left"
                   >
