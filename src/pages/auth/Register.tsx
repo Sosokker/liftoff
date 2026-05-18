@@ -39,7 +39,7 @@ export default function RegisterPage() {
   }
 
   function handleGoogleLogin() {
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    const API_URL = import.meta.env.VITE_API_URL || 'https://liftoff-api.sirin-29.workers.dev'
     const redirect = encodeURIComponent(window.location.origin)
     window.location.href = `${API_URL}/api/auth/google?redirect=${redirect}`
   }

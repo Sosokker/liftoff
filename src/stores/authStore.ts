@@ -1,7 +1,7 @@
 import { createSignal, createEffect } from 'solid-js'
 import type { User } from '../types'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || 'https://liftoff-api.sirin-29.workers.dev'
 
 // Create reactive signals
 const [token, setToken] = createSignal<string | null>(localStorage.getItem('liftoff_token'))

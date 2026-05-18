@@ -261,8 +261,8 @@ export async function processSyncQueue(): Promise<void> {
   setSyncStatus('syncing')
   setPendingCount(items.length)
   
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-  
+  const API_URL = import.meta.env.VITE_API_URL || 'https://liftoff-api.sirin-29.workers.dev'
+
   for (const item of items) {
     try {
       await updateSyncItem(item.id!, { status: 'syncing' })
@@ -305,7 +305,7 @@ export async function offlineApiFetch(endpoint: string, options: RequestInit = {
   const currentToken = token()
   if (!currentToken) throw new Error('Not authenticated')
   
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+  const API_URL = import.meta.env.VITE_API_URL || 'https://liftoff-api.sirin-29.workers.dev'
   const cacheKey = `${endpoint}_${options.method || 'GET'}`
   
   if (navigator.onLine) {
