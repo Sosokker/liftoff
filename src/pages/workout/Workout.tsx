@@ -70,7 +70,7 @@ export default function WorkoutPage() {
   const [showFinishConfirm, setShowFinishConfirm] = createSignal(false)
   const [isLoadingRoutine, setIsLoadingRoutine] = createSignal(false)
   const [prsDetected, setPrsDetected] = createSignal<Array<{exercise_id: number; type: string; value: number; previousBest?: number}>>([])
-  const [showPRCelebration, setShowPRCelebration] = createSignal(false)
+  const [showWorkoutSummary, setShowWorkoutSummary] = createSignal(false)
   const [exerciseSearchQuery, setExerciseSearchQuery] = createSignal('')
   const [exerciseMuscleFilter, setExerciseMuscleFilter] = createSignal('All')
 
@@ -423,12 +423,8 @@ export default function WorkoutPage() {
 
       if (result.personalRecords && result.personalRecords.length > 0) {
         setPrsDetected(result.personalRecords)
-        setShowPRCelebration(true)
-      } else {
-        // No PRs, navigate immediately
-        resetWorkoutState()
-        navigate('/workout/history')
       }
+      setShowWorkoutSummary(true)
     } catch (error: any) {
       console.error('Failed to save workout:', error)
       alert(error.message || 'Failed to save workout. Will retry when online.')
@@ -443,7 +439,7 @@ export default function WorkoutPage() {
     setWorkoutName('')
     setWorkoutNotes('')
     setShowFinishConfirm(false)
-    setShowPRCelebration(false)
+    setShowWorkoutSummary(false)
     setPrsDetected([])
   }
 
@@ -753,44 +749,92 @@ export default function WorkoutPage() {
         </div>
       </Show>
 
-      {/* PR Celebration */}
-      <Show when={showPRCelebration()}>
-        <div class="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
-          <div class="card w-full max-w-sm p-6 text-center animate-bounce-in">
-            <div class="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <span class="text-3xl">🏆</span>
+      {/* Workout Summary */}
+      <Show when={showWorkoutSummary()}>
+        <div class="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4 overflow-auto">
+          <div class="card w-full max-w-sm p-6">
+            <div class="text-center mb-4">
+              <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                <Check class="w-8 h-8 text-primary" />
+              </div>
+              <h3 class="text-xl font-bold">Workout Complete!</h3>
+              <p class="text-sm text-neutral-500 dark:text-neutral-400">
+                {workoutName()} • {formatTime(elapsed())}
+              </p>
             </div>
-            <h3 class="text-xl font-bold mb-1">New Personal Record!</h3>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
-              You crushed it today
-            </p>
-            <div class="space-y-2 mb-4">
-              <For each={prsDetected()}>
-                {(pr) => {
-                  const ex = exercises().find(e => e.exercise_id === pr.exercise_id)
-                  const label = pr.type === 'weight' ? 'kg' : pr.type === 'reps' ? 'reps' : 'vol'
-                  return (
-                    <div class="bg-primary/5 dark:bg-primary/10 rounded-xl p-3 flex items-center justify-between">
-                      <span class="font-medium text-sm">{ex?.exercise_name || 'Exercise'}</span>
-                      <span class="text-primary font-bold">
-                        {pr.type === 'weight' ? 'Weight PR' : pr.type === 'reps' ? 'Reps PR' : 'Volume PR'}
-                        <span class="text-xs text-neutral-500 font-normal ml-1">
-                          {pr.value} {label}
-                        </span>
-                      </span>
+
+            {/* Stats */}
+            <div class="grid grid-cols-3 gap-2 mb-4">
+              <div class="bg-neutral-50 dark:bg-dark-surface rounded-xl p-3 text-center">
+                <p class="text-lg font-bold text-primary">
+                  {exercises().reduce((sum, ex) => sum + ex.sets.filter(s => s.is_completed).reduce((s, set) => s + (set.weight || 0) * (set.reps || 0), 0), 0)}
+                </p>
+                <p class="text-[10px] text-neutral-500">Volume</p>
+              </div>
+              <div class="bg-neutral-50 dark:bg-dark-surface rounded-xl p-3 text-center">
+                <p class="text-lg font-bold text-primary">{exercises().length}</p>
+                <p class="text-[10px] text-neutral-500">Exercises</p>
+              </div>
+              <div class="bg-neutral-50 dark:bg-dark-surface rounded-xl p-3 text-center">
+                <p class="text-lg font-bold text-primary">
+                  {exercises().reduce((sum, ex) => sum + ex.sets.filter(s => s.is_completed).length, 0)}
+                </p>
+                <p class="text-[10px] text-neutral-500">Sets</p>
+              </div>
+            </div>
+
+            {/* PRs */}
+            <Show when={prsDetected().length > 0}>
+              <div class="mb-4">
+                <p class="text-xs font-medium text-yellow-600 dark:text-yellow-400 mb-2 uppercase tracking-wider">New PRs 🏆</p>
+                <div class="space-y-2">
+                  <For each={prsDetected()}>
+                    {(pr) => {
+                      const ex = exercises().find(e => e.exercise_id === pr.exercise_id)
+                      const label = pr.type === 'weight' ? 'kg' : pr.type === 'reps' ? 'reps' : 'vol'
+                      return (
+                        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-2.5 flex items-center justify-between">
+                          <span class="font-medium text-sm">{ex?.exercise_name || 'Exercise'}</span>
+                          <span class="text-xs font-bold text-yellow-700 dark:text-yellow-400">
+                            {pr.type === 'weight' ? 'Weight PR' : pr.type === 'reps' ? 'Reps PR' : 'Volume PR'}
+                            <span class="text-neutral-500 font-normal ml-1">{pr.value} {label}</span>
+                          </span>
+                        </div>
+                      )
+                    }}
+                  </For>
+                </div>
+              </div>
+            </Show>
+
+            {/* Exercises recap */}
+            <div class="space-y-2 mb-4 max-h-[30vh] overflow-y-auto">
+              <For each={exercises()}>
+                {(ex) => (
+                  <div class="bg-neutral-50 dark:bg-dark-surface rounded-xl p-3">
+                    <p class="font-medium text-sm">{ex.exercise_name}</p>
+                    <div class="flex gap-2 mt-1 flex-wrap">
+                      <For each={ex.sets.filter(s => s.is_completed)}>
+                        {(set) => (
+                          <span class="text-xs bg-white dark:bg-dark-bg px-2 py-0.5 rounded-md">
+                            {set.weight || '-'}×{set.reps || '-'}
+                          </span>
+                        )}
+                      </For>
                     </div>
-                  )
-                }}
+                  </div>
+                )}
               </For>
             </div>
-            <button 
+
+            <button
               onClick={() => {
                 resetWorkoutState()
                 navigate('/workout/history')
               }}
               class="btn-primary w-full"
             >
-              Awesome!
+              Done
             </button>
           </div>
         </div>
