@@ -68,6 +68,8 @@ export default function WorkoutPage() {
   const [workoutNotes, setWorkoutNotes] = createSignal('')
   const [showFinishConfirm, setShowFinishConfirm] = createSignal(false)
   const [isLoadingRoutine, setIsLoadingRoutine] = createSignal(false)
+  const [prsDetected, setPrsDetected] = createSignal<Array<{exercise_id: number; type: string; value: number; previousBest?: number}>>([])
+  const [showPRCelebration, setShowPRCelebration] = createSignal(false)
 
   let timerInterval: number | null = null
 
@@ -318,25 +320,35 @@ export default function WorkoutPage() {
     }
     
     try {
-      await apiFetch('/api/workouts', {
+      const result = await apiFetch('/api/workouts', {
         method: 'POST',
         body: JSON.stringify(workoutData)
       })
       
-      // Reset state
-      setIsActive(false)
-      setStartTime(null)
-      setElapsed(0)
-      setExercises([])
-      setWorkoutName('')
-      setWorkoutNotes('')
-      setShowFinishConfirm(false)
-      
-      navigate('/workout/history')
+      if (result.personalRecords && result.personalRecords.length > 0) {
+        setPrsDetected(result.personalRecords)
+        setShowPRCelebration(true)
+      } else {
+        // No PRs, navigate immediately
+        resetWorkoutState()
+        navigate('/workout/history')
+      }
     } catch (error) {
       console.error('Failed to save workout:', error)
       alert('Failed to save workout. Please try again.')
     }
+  }
+
+  function resetWorkoutState() {
+    setIsActive(false)
+    setStartTime(null)
+    setElapsed(0)
+    setExercises([])
+    setWorkoutName('')
+    setWorkoutNotes('')
+    setShowFinishConfirm(false)
+    setShowPRCelebration(false)
+    setPrsDetected([])
   }
 
   const setTypeColors: Record<string, string> = {
@@ -618,6 +630,49 @@ export default function WorkoutPage() {
                 Save Workout
               </button>
             </div>
+          </div>
+        </div>
+      </Show>
+
+      {/* PR Celebration */}
+      <Show when={showPRCelebration()}>
+        <div class="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4">
+          <div class="card w-full max-w-sm p-6 text-center animate-bounce-in">
+            <div class="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span class="text-3xl">🏆</span>
+            </div>
+            <h3 class="text-xl font-bold mb-1">New Personal Record!</h3>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+              You crushed it today
+            </p>
+            <div class="space-y-2 mb-4">
+              <For each={prsDetected()}>
+                {(pr) => {
+                  const ex = exercises().find(e => e.exercise_id === pr.exercise_id)
+                  const label = pr.type === 'weight' ? 'kg' : pr.type === 'reps' ? 'reps' : 'vol'
+                  return (
+                    <div class="bg-primary/5 dark:bg-primary/10 rounded-xl p-3 flex items-center justify-between">
+                      <span class="font-medium text-sm">{ex?.exercise_name || 'Exercise'}</span>
+                      <span class="text-primary font-bold">
+                        {pr.type === 'weight' ? 'Weight PR' : pr.type === 'reps' ? 'Reps PR' : 'Volume PR'}
+                        <span class="text-xs text-neutral-500 font-normal ml-1">
+                          {pr.value} {label}
+                        </span>
+                      </span>
+                    </div>
+                  )
+                }}
+              </For>
+            </div>
+            <button 
+              onClick={() => {
+                resetWorkoutState()
+                navigate('/workout/history')
+              }}
+              class="btn-primary w-full"
+            >
+              Awesome!
+            </button>
           </div>
         </div>
       </Show>

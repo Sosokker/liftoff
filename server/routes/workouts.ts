@@ -122,6 +122,13 @@ workouts.post('/', async (c) => {
     })
 
     const workoutId = Number(workoutResult.lastInsertRowid)
+    const personalRecords: Array<{
+      exercise_id: number
+      exercise_name?: string
+      type: 'weight' | 'reps' | 'volume'
+      value: number
+      previousBest?: number
+    }> = []
 
     if (workoutExercises && workoutExercises.length > 0) {
       for (let i = 0; i < workoutExercises.length; i++) {
@@ -141,6 +148,9 @@ workouts.post('/', async (c) => {
         const workoutExerciseId = Number(exResult.lastInsertRowid)
 
         if (ex.sets && ex.sets.length > 0) {
+          let maxWeight = 0
+          let maxReps = 0
+          let totalVolume = 0
           for (let j = 0; j < ex.sets.length; j++) {
             const set = ex.sets[j]
             await db.execute({
@@ -160,12 +170,45 @@ workouts.post('/', async (c) => {
                 set.is_completed ? new Date().toISOString() : null
               ]
             })
+            if (set.is_completed) {
+              if (set.weight > maxWeight) maxWeight = set.weight
+              if (set.reps > maxReps) maxReps = set.reps
+              totalVolume += (set.weight || 0) * (set.reps || 0)
+            }
+          }
+
+          // Check for PRs
+          const prResult = await db.execute({
+            sql: `
+              SELECT 
+                MAX(s.weight) as max_weight,
+                MAX(s.reps) as max_reps,
+                MAX(s.weight * s.reps) as max_volume
+              FROM sets s
+              JOIN workout_exercises we ON s.workout_exercise_id = we.id
+              JOIN workouts w ON we.workout_id = w.id
+              WHERE we.exercise_id = ? AND w.user_id = ? AND s.is_completed = 1 AND w.id != ?
+            `,
+            args: [exerciseId, userId, workoutId]
+          })
+          const prevMaxWeight = parseFloat((prResult.rows[0] as any).max_weight) || 0
+          const prevMaxReps = parseInt((prResult.rows[0] as any).max_reps) || 0
+          const prevMaxVolume = parseFloat((prResult.rows[0] as any).max_volume) || 0
+
+          if (maxWeight > 0 && maxWeight > prevMaxWeight) {
+            personalRecords.push({ exercise_id: exerciseId, type: 'weight', value: maxWeight, previousBest: prevMaxWeight || undefined })
+          }
+          if (maxReps > 0 && maxReps > prevMaxReps) {
+            personalRecords.push({ exercise_id: exerciseId, type: 'reps', value: maxReps, previousBest: prevMaxReps || undefined })
+          }
+          if (totalVolume > 0 && totalVolume > prevMaxVolume) {
+            personalRecords.push({ exercise_id: exerciseId, type: 'volume', value: totalVolume, previousBest: prevMaxVolume || undefined })
           }
         }
       }
     }
 
-    return c.json({ id: workoutId }, 201)
+    return c.json({ id: workoutId, personalRecords }, 201)
   } catch (error) {
     console.error('Create workout error:', error)
     return c.json({ error: 'Failed to create workout' }, 500)
