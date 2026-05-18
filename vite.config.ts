@@ -11,8 +11,8 @@ export default defineConfig({
         name: 'Liftoff - Workout Tracker',
         short_name: 'Liftoff',
         description: 'Track your workouts, routines, and body metrics',
-        theme_color: '#06C167',
-        background_color: '#ffffff',
+        theme_color: '#0a0a0a',
+        background_color: '#0a0a0a',
         display: 'standalone',
         orientation: 'portrait',
         icons: [

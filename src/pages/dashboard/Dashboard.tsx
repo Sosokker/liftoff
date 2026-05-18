@@ -1,4 +1,4 @@
-import { createSignal, createEffect, For } from 'solid-js'
+import { createSignal, createEffect, Show, For } from 'solid-js'
 import { useNavigate } from '@solidjs/router'
 import { useAuth, apiFetch } from '../../stores/authStore'
 import {
@@ -229,7 +229,7 @@ export default function DashboardPage() {
   const [workoutDates, setWorkoutDates] = createSignal<Set<string>>(new Set())
   const [currentStreak, setCurrentStreak] = createSignal(0)
   const [totalWorkouts, setTotalWorkouts] = createSignal(0)
-  const [, setIsLoading] = createSignal(true)
+  const [isLoading, setIsLoading] = createSignal(true)
 
   const [calendarMonth, setCalendarMonth] = createSignal(new Date().getMonth())
   const [calendarYear, setCalendarYear] = createSignal(new Date().getFullYear())
@@ -284,6 +284,11 @@ export default function DashboardPage() {
 
   return (
     <div class="px-4 pt-4 pb-6 space-y-6">
+      <Show when={!isLoading()} fallback={
+        <div class="flex justify-center py-20">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white" />
+        </div>
+      }>
       {/* Header */}
       <div class="flex items-start justify-between">
         <div class="flex items-center gap-3">
@@ -296,8 +301,9 @@ export default function DashboardPage() {
           </div>
         </div>
         <button
-          onClick={() => navigate('/settings')}
+          onClick={() => navigate('/tools')}
           class="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors"
+          aria-label="Tools"
         >
           <Settings class="w-5 h-5 text-neutral-400" />
         </button>
@@ -357,9 +363,6 @@ export default function DashboardPage() {
         {/* Month Navigation */}
         <div class="flex items-center justify-between mt-4 pt-4 border-t border-[#262626]">
           <div class="flex items-center gap-2 text-sm font-medium">
-            <div class="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center">
-              <ChevronLeft class="w-4 h-4" />
-            </div>
             <span class="text-neutral-400">{monthYearLabel()}</span>
           </div>
           <div class="flex items-center gap-2">
@@ -391,6 +394,7 @@ export default function DashboardPage() {
           <p class="text-xs text-neutral-500">days</p>
         </div>
       </div>
+      </Show>
     </div>
   )
 }

@@ -32,7 +32,7 @@ export default function PlateCalculatorPage() {
     <div class="px-4 py-6">
       <button 
         onClick={() => navigate('/tools')}
-        class="flex items-center gap-1 text-sm text-neutral-500 text-neutral-400 mb-4"
+        class="flex items-center gap-1 text-sm text-neutral-400 mb-4"
       >
         <ArrowLeft class="w-4 h-4" />
         Back to tools
@@ -44,7 +44,7 @@ export default function PlateCalculatorPage() {
         </div>
         <div>
           <h2 class="text-xl font-bold">Plate Calculator</h2>
-          <p class="text-sm text-neutral-500 text-neutral-400">Calculate barbell loading</p>
+          <p class="text-sm text-neutral-400">Calculate barbell loading</p>
         </div>
       </div>
 
@@ -114,19 +114,19 @@ export default function PlateCalculatorPage() {
           
           <div class="space-y-3">
             <div class="flex justify-between text-sm">
-              <span class="text-neutral-500 text-neutral-400">Target</span>
+              <span class="text-neutral-400">Target</span>
               <span class="font-semibold">{result().targetWeight} {unit()}</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-neutral-500 text-neutral-400">Bar</span>
+              <span class="text-neutral-400">Bar</span>
               <span class="font-semibold">{result().barWeight} {unit()}</span>
             </div>
             <div class="flex justify-between text-sm">
-              <span class="text-neutral-500 text-neutral-400">Per side</span>
+              <span class="text-neutral-400">Per side</span>
               <span class="font-semibold">{result().weightPerSide.toFixed(1)} {unit()}</span>
             </div>
             
-            <div class="border-t border-[#262626] border-[#262626] pt-3">
+            <div class="border-t border-[#262626] pt-3">
               <p class="text-sm font-medium mb-2">Plates per side:</p>
               <Show when={result().plates.length > 0} fallback={
                 <p class="text-sm text-neutral-500">Bar only</p>
@@ -145,7 +145,7 @@ export default function PlateCalculatorPage() {
             </div>
 
             <Show when={result().remainder > 0}>
-              <p class="text-xs text-yellow-600 dark:text-yellow-400">
+              <p class="text-xs text-yellow-400 text-yellow-400">
                 Remainder: {result().remainder.toFixed(1)} {unit()} (adjust with micro plates)
               </p>
             </Show>

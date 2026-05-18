@@ -46,8 +46,8 @@ export default function RoutinesPage() {
       }>
         <Show when={routines().length > 0} fallback={
           <div class="card p-8 text-center">
-            <List class="w-12 h-12 text-neutral-300 text-neutral-300 mx-auto mb-3" />
-            <p class="text-neutral-500 text-neutral-400 mb-2">No routines yet</p>
+            <List class="w-12 h-12 text-neutral-300 mx-auto mb-3" />
+            <p class="text-neutral-400 mb-2">No routines yet</p>
             <button 
               onClick={() => navigate('/routines/builder')}
               class="text-primary font-medium"
@@ -67,7 +67,7 @@ export default function RoutinesPage() {
                       </div>
                       <div>
                         <h3 class="font-semibold">{routine.name}</h3>
-                        <p class="text-xs text-neutral-500 text-neutral-400">
+                        <p class="text-xs text-neutral-400">
                           {routine.exercise_count || 0} exercises
                         </p>
                       </div>
@@ -82,7 +82,7 @@ export default function RoutinesPage() {
                       </button>
                       <button
                         onClick={() => navigate(`/routines/builder?id=${routine.id}`)}
-                        class="p-2 hover:bg-[#262626] dark:hover:bg-dark-surface text-neutral-500 rounded-xl transition-colors"
+                        class="p-2 hover:bg-[#1a1a1a] rounded-xl transition-colors"
                         title="Edit routine"
                       >
                         <Pencil class="w-4 h-4" />
@@ -90,7 +90,7 @@ export default function RoutinesPage() {
                     </div>
                   </div>
                   <Show when={routine.description}>
-                    <p class="text-sm text-neutral-500 text-neutral-400 mt-2 ml-13">
+                    <p class="text-sm text-neutral-400 mt-2 ml-14">
                       {routine.description}
                     </p>
                   </Show>

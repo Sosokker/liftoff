@@ -163,7 +163,7 @@ export default function RoutineBuilderPage() {
           <Show when={routineId}>
             <button 
               onClick={deleteRoutine}
-              class="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+              class="p-2 hover:bg-red-950/30 hover:bg-red-900/20 rounded-xl transition-colors"
             >
               <Trash2 class="w-5 h-5 text-red-500" />
             </button>
@@ -215,7 +215,7 @@ export default function RoutineBuilderPage() {
         <div class="space-y-3">
           <div class="flex items-center justify-between">
             <h3 class="font-semibold">Exercises</h3>
-            <span class="text-sm text-neutral-500 text-neutral-400">{exercises().length} total</span>
+            <span class="text-sm text-neutral-400">{exercises().length} total</span>
           </div>
 
           <For each={exercises()}>
@@ -226,12 +226,12 @@ export default function RoutineBuilderPage() {
                     <GripVertical class="w-4 h-4 text-neutral-400" />
                     <div>
                       <h4 class="font-semibold">{exercise.name}</h4>
-                      <p class="text-xs text-neutral-500 text-neutral-400">{exercise.muscle_group}</p>
+                      <p class="text-xs text-neutral-400">{exercise.muscle_group}</p>
                     </div>
                   </div>
                   <button 
                     onClick={() => removeExercise(index())}
-                    class="p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    class="p-1 hover:bg-red-950/30 hover:bg-red-900/20 rounded-lg transition-colors"
                   >
                     <X class="w-4 h-4 text-red-500" />
                   </button>
@@ -239,7 +239,7 @@ export default function RoutineBuilderPage() {
                 
                 <div class="grid grid-cols-3 gap-2">
                   <div>
-                    <label class="text-xs text-neutral-500 text-neutral-400 mb-1 block">Sets</label>
+                    <label class="text-xs text-neutral-400 mb-1 block">Sets</label>
                     <input
                       type="number"
                       value={exercise.target_sets}
@@ -249,7 +249,7 @@ export default function RoutineBuilderPage() {
                     />
                   </div>
                   <div>
-                    <label class="text-xs text-neutral-500 text-neutral-400 mb-1 block">Reps</label>
+                    <label class="text-xs text-neutral-400 mb-1 block">Reps</label>
                     <input
                       type="number"
                       value={exercise.target_reps}
@@ -259,7 +259,7 @@ export default function RoutineBuilderPage() {
                     />
                   </div>
                   <div>
-                    <label class="text-xs text-neutral-500 text-neutral-400 mb-1 block">Rest (s)</label>
+                    <label class="text-xs text-neutral-400 mb-1 block">Rest (s)</label>
                     <input
                       type="number"
                       value={exercise.rest_seconds}
@@ -276,7 +276,7 @@ export default function RoutineBuilderPage() {
 
           <button 
             onClick={() => setShowPicker(true)}
-            class="w-full py-4 border-2 border-dashed border-[#333] border-[#262626] rounded-xl text-neutral-500 text-neutral-400 hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
+            class="w-full py-4 border-2 border-dashed border-[#333] border-[#262626] rounded-xl text-neutral-400 hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
           >
             <Plus class="w-5 h-5" />
             <span class="font-medium">Add Exercise</span>
@@ -288,7 +288,7 @@ export default function RoutineBuilderPage() {
       <Show when={showPicker()}>
         <div class="fixed inset-0 z-50 bg-black/50 flex items-end" onClick={() => setShowPicker(false)}>
           <div class="bottom-sheet w-full max-h-[70vh]" onClick={(e) => e.stopPropagation()}>
-            <div class="p-4 border-b border-[#262626] border-[#262626]">
+            <div class="p-4 border-b border-[#262626]">
               <div class="flex items-center justify-between">
                 <h3 class="font-semibold text-lg">Add Exercise</h3>
                 <button onClick={() => setShowPicker(false)}>
@@ -304,7 +304,7 @@ export default function RoutineBuilderPage() {
                     class="exercise-card w-full text-left"
                   >
                     <p class="font-medium">{exercise.name}</p>
-                    <p class="text-xs text-neutral-500 text-neutral-400">{exercise.muscle_group}</p>
+                    <p class="text-xs text-neutral-400">{exercise.muscle_group}</p>
                   </button>
                 )}
               </For>

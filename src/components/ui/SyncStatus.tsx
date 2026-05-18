@@ -22,10 +22,10 @@ export default function SyncStatus() {
   }
   
   const statusColor = () => {
-    if (!isOnline()) return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+    if (!isOnline()) return 'bg-yellow-900/30 text-yellow-400 bg-yellow-900/30 text-yellow-400'
     const status = syncStatus()
     if (status === 'syncing') return 'bg-primary/10 text-primary'
-    if (status === 'error') return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+    if (status === 'error') return 'bg-red-900/30 text-red-400 bg-red-900/30 text-red-400'
     return ''
   }
   

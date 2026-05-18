@@ -55,6 +55,7 @@ export default function AppLayout(props: { children: JSX.Element }) {
               <button
                 onClick={() => { logout(); navigate('/login') }}
                 class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors"
+                aria-label="Log out"
               >
                 <LogOut class="w-4 h-4 text-neutral-400" />
               </button>
@@ -76,6 +77,7 @@ export default function AppLayout(props: { children: JSX.Element }) {
               <button
                 onClick={() => navigate(item.path)}
                 class={`nav-item ${isActive(item.path) ? 'active' : ''}`}
+                aria-label={item.label}
               >
                 <div class={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isActive(item.path) ? 'bg-white/10' : ''}`}>
                   <item.icon class="w-5 h-5" />
