@@ -1,12 +1,13 @@
 import { createSignal, createEffect, Show, For } from 'solid-js'
 import { useNavigate } from '@solidjs/router'
 import { apiFetch } from '../../stores/authStore'
-import { Calendar, Clock, Trash2, Dumbbell } from 'lucide-solid'
+import { Calendar, Clock, Trash2, Dumbbell, BookmarkPlus, Loader2 } from 'lucide-solid'
 
 export default function WorkoutHistoryPage() {
   const navigate = useNavigate()
   const [workouts, setWorkouts] = createSignal<any[]>([])
   const [isLoading, setIsLoading] = createSignal(true)
+  const [savingWorkoutId, setSavingWorkoutId] = createSignal<number | null>(null)
 
   createEffect(async () => {
     try {
@@ -21,12 +22,27 @@ export default function WorkoutHistoryPage() {
 
   async function deleteWorkout(id: number) {
     if (!confirm('Delete this workout?')) return
-    
+
     try {
       await apiFetch(`/api/workouts/${id}`, { method: 'DELETE' })
       setWorkouts(workouts().filter(w => w.id !== id))
     } catch (error) {
       console.error('Failed to delete workout:', error)
+    }
+  }
+
+  async function saveWorkoutAsRoutine(workout: any) {
+    setSavingWorkoutId(Number(workout.id))
+    try {
+      const result = await apiFetch(`/api/workouts/${workout.id}/save-as-routine`, {
+        method: 'POST',
+        body: JSON.stringify({})
+      })
+      alert(`Routine "${result.name}" saved!`)
+    } catch (err: any) {
+      alert(err.message || 'Failed to save routine')
+    } finally {
+      setSavingWorkoutId(null)
     }
   }
 
@@ -88,12 +104,26 @@ export default function WorkoutHistoryPage() {
                           </Show>
                         </div>
                       </div>
-                      <button 
-                        onClick={() => deleteWorkout(Number(workout.id))}
-                        class="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                      >
-                        <Trash2 class="w-4 h-4 text-red-500" />
-                      </button>
+                      <div class="flex items-center gap-1">
+                        <button
+                          onClick={() => saveWorkoutAsRoutine(workout)}
+                          disabled={savingWorkoutId() === Number(workout.id)}
+                          class="p-2 hover:bg-primary/10 rounded-lg transition-colors"
+                          title="Save as Routine"
+                        >
+                          <Show when={savingWorkoutId() === Number(workout.id)} fallback={
+                            <BookmarkPlus class="w-4 h-4 text-primary" />
+                          }>
+                            <Loader2 class="w-4 h-4 text-primary animate-spin" />
+                          </Show>
+                        </button>
+                        <button
+                          onClick={() => deleteWorkout(Number(workout.id))}
+                          class="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        >
+                          <Trash2 class="w-4 h-4 text-red-500" />
+                        </button>
+                      </div>
                     </div>
                     
                     <div class="flex items-center gap-4 text-sm">

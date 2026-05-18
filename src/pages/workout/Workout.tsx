@@ -9,7 +9,8 @@ import {
   Timer,
   X,
   Trash2,
-  Loader2
+  Loader2,
+  BookmarkPlus
 } from 'lucide-solid'
 
 interface ExerciseDef {
@@ -73,6 +74,10 @@ export default function WorkoutPage() {
   const [showWorkoutSummary, setShowWorkoutSummary] = createSignal(false)
   const [exerciseSearchQuery, setExerciseSearchQuery] = createSignal('')
   const [exerciseMuscleFilter, setExerciseMuscleFilter] = createSignal('All')
+  const [savedWorkoutId, setSavedWorkoutId] = createSignal<number | null>(null)
+  const [isSavingAsRoutine, setIsSavingAsRoutine] = createSignal(false)
+  const [showSaveRoutineModal, setShowSaveRoutineModal] = createSignal(false)
+  const [routineNameInput, setRoutineNameInput] = createSignal('')
 
   let timerInterval: number | null = null
   let audioCtx: AudioContext | null = null
@@ -424,10 +429,29 @@ export default function WorkoutPage() {
       if (result.personalRecords && result.personalRecords.length > 0) {
         setPrsDetected(result.personalRecords)
       }
+      setSavedWorkoutId(result.id)
+      setRoutineNameInput(`${workoutName()} Routine`)
       setShowWorkoutSummary(true)
     } catch (error: any) {
       console.error('Failed to save workout:', error)
       alert(error.message || 'Failed to save workout. Will retry when online.')
+    }
+  }
+
+  async function saveAsRoutine() {
+    if (!savedWorkoutId()) return
+    setIsSavingAsRoutine(true)
+    try {
+      const result = await apiFetch(`/api/workouts/${savedWorkoutId()}/save-as-routine`, {
+        method: 'POST',
+        body: JSON.stringify({ name: routineNameInput() || undefined })
+      })
+      setShowSaveRoutineModal(false)
+      alert(`Routine "${result.name}" saved!`)
+    } catch (err: any) {
+      alert(err.message || 'Failed to save routine')
+    } finally {
+      setIsSavingAsRoutine(false)
     }
   }
 
@@ -440,7 +464,10 @@ export default function WorkoutPage() {
     setWorkoutNotes('')
     setShowFinishConfirm(false)
     setShowWorkoutSummary(false)
+    setShowSaveRoutineModal(false)
     setPrsDetected([])
+    setSavedWorkoutId(null)
+    setRoutineNameInput('')
   }
 
   const setTypeColors: Record<string, string> = {
@@ -827,15 +854,58 @@ export default function WorkoutPage() {
               </For>
             </div>
 
-            <button
-              onClick={() => {
-                resetWorkoutState()
-                navigate('/workout/history')
-              }}
-              class="btn-primary w-full"
-            >
-              Done
-            </button>
+            <div class="space-y-2">
+              <button
+                onClick={() => setShowSaveRoutineModal(true)}
+                class="btn-secondary w-full flex items-center justify-center gap-2"
+              >
+                <BookmarkPlus class="w-4 h-4" />
+                Save as Routine
+              </button>
+              <button
+                onClick={() => {
+                  resetWorkoutState()
+                  navigate('/workout/history')
+                }}
+                class="btn-primary w-full"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      </Show>
+
+      {/* Save as Routine Modal */}
+      <Show when={showSaveRoutineModal()}>
+        <div class="fixed inset-0 z-[70] bg-black/60 flex items-center justify-center p-4">
+          <div class="card w-full max-w-sm p-6">
+            <h3 class="text-lg font-bold mb-2">Save as Routine</h3>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+              Create a reusable routine from this workout
+            </p>
+            <input
+              type="text"
+              value={routineNameInput()}
+              onInput={(e) => setRoutineNameInput(e.currentTarget.value)}
+              class="input mb-4 w-full"
+              placeholder="Routine name"
+            />
+            <div class="flex gap-3">
+              <button
+                onClick={() => setShowSaveRoutineModal(false)}
+                class="btn-secondary flex-1 text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={saveAsRoutine}
+                disabled={isSavingAsRoutine()}
+                class="btn-primary flex-1 text-sm"
+              >
+                {isSavingAsRoutine() ? 'Saving...' : 'Save Routine'}
+              </button>
+            </div>
           </div>
         </div>
       </Show>

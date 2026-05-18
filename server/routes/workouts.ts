@@ -379,4 +379,91 @@ workouts.get('/last-session/:exerciseId', async (c) => {
   })
 })
 
+// Save a past workout as a routine
+workouts.post('/:id/save-as-routine', async (c) => {
+  const id = c.req.param('id')
+  const userId = c.get('userId')
+  const body = await c.req.json().catch(() => ({}))
+  const routineName = body.name || null
+
+  const db = getDb()
+
+  // Fetch workout
+  const workoutResult = await db.execute({
+    sql: 'SELECT * FROM workouts WHERE id = ? AND user_id = ?',
+    args: [id, userId]
+  })
+
+  if (workoutResult.rows.length === 0) {
+    return c.json({ error: 'Workout not found' }, 404)
+  }
+
+  const workout = workoutResult.rows[0]
+
+  // Fetch exercises and sets for this workout
+  const exercisesResult = await db.execute({
+    sql: `
+      SELECT we.id as workout_exercise_id, we.exercise_id, we.order_index, we.notes,
+             e.name as exercise_name, e.muscle_group
+      FROM workout_exercises we
+      JOIN exercises e ON we.exercise_id = e.id
+      WHERE we.workout_id = ?
+      ORDER BY we.order_index
+    `,
+    args: [id]
+  })
+
+  if (exercisesResult.rows.length === 0) {
+    return c.json({ error: 'Workout has no exercises' }, 400)
+  }
+
+  // Get sets for each exercise to compute targets
+  const workoutExerciseIds = exercisesResult.rows.map(r => Number(r.workout_exercise_id))
+  const setsResult = await db.execute({
+    sql: `
+      SELECT workout_exercise_id, reps, weight, set_number
+      FROM sets
+      WHERE workout_exercise_id IN (${workoutExerciseIds.map(() => '?').join(',')})
+      ORDER BY set_number
+    `,
+    args: workoutExerciseIds
+  })
+
+  // Group sets by exercise
+  const setsByExercise = new Map<number, any[]>()
+  for (const row of setsResult.rows) {
+    const weId = Number(row.workout_exercise_id)
+    if (!setsByExercise.has(weId)) setsByExercise.set(weId, [])
+    setsByExercise.get(weId)!.push(row)
+  }
+
+  // Create routine
+  const routineResult = await db.execute({
+    sql: 'INSERT INTO routines (user_id, name, description) VALUES (?, ?, ?)',
+    args: [userId, routineName || `${String(workout.name)} Routine`, `Created from workout on ${new Date(String(workout.start_time)).toLocaleDateString()}`]
+  })
+  const routineId = Number(routineResult.lastInsertRowid)
+
+  // Create routine_exercises with targets based on actual performance
+  for (let i = 0; i < exercisesResult.rows.length; i++) {
+    const ex = exercisesResult.rows[i]
+    const sets = setsByExercise.get(Number(ex.workout_exercise_id)) || []
+    const targetSets = sets.length || 3
+    const avgReps = sets.length > 0
+      ? Math.round(sets.reduce((sum: number, s: any) => sum + (Number(s.reps) || 0), 0) / sets.length)
+      : 10
+
+    await db.execute({
+      sql: `
+        INSERT INTO routine_exercises
+        (routine_id, exercise_id, order_index, target_sets, target_reps, rest_seconds)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      args: [routineId, ex.exercise_id, i, targetSets, avgReps || 10, 90]
+    })
+  }
+
+  return c.json({ id: routineId, name: routineName || `${String(workout.name)} Routine` }, 201)
+})
+
 export { workouts as workoutRoutes }
