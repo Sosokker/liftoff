@@ -1,5 +1,5 @@
 import { createSignal, createEffect, Show, For, onCleanup } from 'solid-js'
-import { useNavigate } from '@solidjs/router'
+import { useNavigate, useSearchParams } from '@solidjs/router'
 import { apiFetch } from '../../stores/authStore'
 import { 
   Play, 
@@ -7,7 +7,8 @@ import {
   Plus, 
   Timer,
   X,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-solid'
 
 interface ExerciseDef {
@@ -39,6 +40,7 @@ interface ActiveExercise {
 
 export default function WorkoutPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [isActive, setIsActive] = createSignal(false)
   const [workoutName, setWorkoutName] = createSignal('')
   const [startTime, setStartTime] = createSignal<Date | null>(null)
@@ -51,6 +53,7 @@ export default function WorkoutPage() {
   const [restInterval, setRestInterval] = createSignal<number | null>(null)
   const [workoutNotes, setWorkoutNotes] = createSignal('')
   const [showFinishConfirm, setShowFinishConfirm] = createSignal(false)
+  const [isLoadingRoutine, setIsLoadingRoutine] = createSignal(false)
 
   let timerInterval: number | null = null
 
@@ -61,6 +64,43 @@ export default function WorkoutPage() {
       setAvailableExercises(data)
     } catch (error) {
       console.error('Failed to load exercises:', error)
+    }
+  })
+
+  // Load routine if routineId is present in URL
+  createEffect(async () => {
+    const routineId = searchParams.routineId
+    if (!routineId || isActive()) return
+
+    setIsLoadingRoutine(true)
+    try {
+      const routine = await apiFetch(`/api/routines/${routineId}`)
+      if (routine && routine.exercises) {
+        setWorkoutName(routine.name)
+        const loadedExercises: ActiveExercise[] = routine.exercises.map((re: any, idx: number) => ({
+          exercise_id: re.exercise_id,
+          exercise_name: re.exercise_name,
+          muscle_group: re.muscle_group,
+          order_index: idx,
+          notes: '',
+          sets: Array.from({ length: re.target_sets || 3 }, (_, i) => ({
+            set_type: i === 0 ? 'warmup' : 'normal',
+            set_number: i + 1,
+            reps: re.target_reps || 10,
+            weight: 0,
+            rpe: 0,
+            is_completed: false
+          }))
+        }))
+        setExercises(loadedExercises)
+        // Auto-start the workout
+        setIsActive(true)
+        setStartTime(new Date())
+      }
+    } catch (error) {
+      console.error('Failed to load routine:', error)
+    } finally {
+      setIsLoadingRoutine(false)
     }
   })
 
@@ -244,27 +284,35 @@ export default function WorkoutPage() {
     <div class="px-4 py-6 space-y-4">
       {/* Workout Header */}
       <Show when={!isActive()}>
-        <div class="text-center py-8">
-          <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Play class="w-8 h-8 text-primary ml-1" />
+        <Show when={isLoadingRoutine()}>
+          <div class="text-center py-12">
+            <Loader2 class="w-8 h-8 text-primary animate-spin mx-auto mb-4" />
+            <p class="text-neutral-500 dark:text-neutral-400">Loading routine...</p>
           </div>
-          <h2 class="text-xl font-bold mb-2">Start Workout</h2>
-          <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
-            Log your training session and track your progress
-          </p>
-          
-          <input
-            type="text"
-            value={workoutName()}
-            onInput={(e) => setWorkoutName(e.currentTarget.value)}
-            class="input mb-4 max-w-xs mx-auto"
-            placeholder="Workout name (optional)"
-          />
-          
-          <button onClick={startWorkout} class="btn-primary px-8">
-            Start Empty Workout
-          </button>
-        </div>
+        </Show>
+        <Show when={!isLoadingRoutine()}>
+          <div class="text-center py-8">
+            <div class="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Play class="w-8 h-8 text-primary ml-1" />
+            </div>
+            <h2 class="text-xl font-bold mb-2">Start Workout</h2>
+            <p class="text-sm text-neutral-500 dark:text-neutral-400 mb-6">
+              Log your training session and track your progress
+            </p>
+            
+            <input
+              type="text"
+              value={workoutName()}
+              onInput={(e) => setWorkoutName(e.currentTarget.value)}
+              class="input mb-4 max-w-xs mx-auto"
+              placeholder="Workout name (optional)"
+            />
+            
+            <button onClick={startWorkout} class="btn-primary px-8">
+              Start Empty Workout
+            </button>
+          </div>
+        </Show>
       </Show>
 
       <Show when={isActive()}>
