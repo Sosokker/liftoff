@@ -8,7 +8,9 @@ import {
   Calendar, 
   Flame,
   ChevronRight,
-  Play
+  Play,
+  Wrench,
+  User
 } from 'lucide-solid'
 
 interface DashboardStats {
@@ -101,6 +103,26 @@ export default function DashboardPage() {
           </div>
           <p class="font-semibold text-sm">Routines</p>
           <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Your templates</p>
+        </button>
+        <button 
+          onClick={() => navigate('/tools')}
+          class="card p-4 text-left active:scale-[0.98] transition-transform"
+        >
+          <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center mb-3">
+            <Wrench class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          </div>
+          <p class="font-semibold text-sm">Tools</p>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Import, calc, export</p>
+        </button>
+        <button 
+          onClick={() => navigate('/body')}
+          class="card p-4 text-left active:scale-[0.98] transition-transform"
+        >
+          <div class="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center mb-3">
+            <User class="w-5 h-5 text-purple-600 dark:text-purple-400" />
+          </div>
+          <p class="font-semibold text-sm">Body</p>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Measurements</p>
         </button>
       </div>
 

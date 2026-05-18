@@ -8,7 +8,7 @@ import {
   Dumbbell, 
   ClipboardList, 
   TrendingUp, 
-  User, 
+  Wrench,
   Moon, 
   Sun,
   LogOut,
@@ -29,7 +29,7 @@ export default function AppLayout(props: { children: JSX.Element }) {
     { path: '/workout', icon: Dumbbell, label: 'Workout' },
     { path: '/routines', icon: ClipboardList, label: 'Routines' },
     { path: '/analytics', icon: TrendingUp, label: 'Stats' },
-    { path: '/body', icon: User, label: 'Body' },
+    { path: '/tools', icon: Wrench, label: 'Tools' },
   ]
 
   return (
