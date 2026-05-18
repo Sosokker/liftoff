@@ -28,6 +28,19 @@ interface WorkoutSet {
   completed_at?: string
 }
 
+interface PreviousSet {
+  set_number: number
+  set_type: string
+  reps: number
+  weight: number
+  rpe: number
+}
+
+interface PreviousPerformance {
+  workoutDate: string
+  sets: PreviousSet[]
+}
+
 interface ActiveExercise {
   id?: number
   exercise_id: number
@@ -36,6 +49,7 @@ interface ActiveExercise {
   order_index: number
   notes: string
   sets: WorkoutSet[]
+  previousPerformance?: PreviousPerformance
 }
 
 export default function WorkoutPage() {
@@ -57,6 +71,27 @@ export default function WorkoutPage() {
 
   let timerInterval: number | null = null
 
+  async function fetchPreviousPerformance(exerciseId: number): Promise<PreviousPerformance | undefined> {
+    try {
+      const data = await apiFetch(`/api/workouts/last-session/${exerciseId}`)
+      if (data.sets && data.sets.length > 0) {
+        return {
+          workoutDate: data.workoutDate,
+          sets: data.sets.map((s: any) => ({
+            set_number: s.set_number,
+            set_type: s.set_type,
+            reps: s.reps || 0,
+            weight: s.weight || 0,
+            rpe: s.rpe || 0
+          }))
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch previous performance:', e)
+    }
+    return undefined
+  }
+
   // Load exercises
   createEffect(async () => {
     try {
@@ -77,21 +112,34 @@ export default function WorkoutPage() {
       const routine = await apiFetch(`/api/routines/${routineId}`)
       if (routine && routine.exercises) {
         setWorkoutName(routine.name)
-        const loadedExercises: ActiveExercise[] = routine.exercises.map((re: any, idx: number) => ({
-          exercise_id: re.exercise_id,
-          exercise_name: re.exercise_name,
-          muscle_group: re.muscle_group,
-          order_index: idx,
-          notes: '',
-          sets: Array.from({ length: re.target_sets || 3 }, (_, i) => ({
-            set_type: i === 0 ? 'warmup' : 'normal',
-            set_number: i + 1,
-            reps: re.target_reps || 10,
-            weight: 0,
-            rpe: 0,
-            is_completed: false
-          }))
-        }))
+        const loadedExercises: ActiveExercise[] = []
+        for (let idx = 0; idx < routine.exercises.length; idx++) {
+          const re = routine.exercises[idx]
+          const prev = await fetchPreviousPerformance(re.exercise_id)
+          const prevSets = prev?.sets || []
+          const setCount = Math.max(re.target_sets || 3, prevSets.length)
+          const sets: WorkoutSet[] = []
+          for (let i = 0; i < setCount; i++) {
+            const p = prevSets[i]
+            sets.push({
+              set_type: p?.set_type || (i === 0 ? 'warmup' : 'normal'),
+              set_number: i + 1,
+              reps: p?.reps || re.target_reps || 10,
+              weight: p?.weight || 0,
+              rpe: p?.rpe || 0,
+              is_completed: false
+            })
+          }
+          loadedExercises.push({
+            exercise_id: re.exercise_id,
+            exercise_name: re.exercise_name,
+            muscle_group: re.muscle_group,
+            order_index: idx,
+            notes: '',
+            sets,
+            previousPerformance: prev
+          })
+        }
         setExercises(loadedExercises)
         // Auto-start the workout
         setIsActive(true)
@@ -158,27 +206,45 @@ export default function WorkoutPage() {
     }
   }
 
-  function addExercise(exercise: ExerciseDef) {
+  async function addExercise(exercise: ExerciseDef) {
+    const prev = await fetchPreviousPerformance(exercise.id)
+    const prevSets = prev?.sets || []
+
+    const newSets: WorkoutSet[] = []
+    const setCount = prevSets.length > 0 ? prevSets.length : 1
+
+    for (let i = 0; i < setCount; i++) {
+      const prevSet = prevSets[i]
+      newSets.push({
+        set_type: prevSet?.set_type || 'normal',
+        set_number: i + 1,
+        reps: prevSet?.reps || 0,
+        weight: prevSet?.weight || 0,
+        rpe: prevSet?.rpe || 0,
+        is_completed: false
+      })
+    }
+
     const newExercise: ActiveExercise = {
       exercise_id: exercise.id,
       exercise_name: exercise.name,
       muscle_group: exercise.muscle_group,
       order_index: exercises().length,
       notes: '',
-      sets: [createSet(1)]
+      sets: newSets,
+      previousPerformance: prev
     }
     setExercises([...exercises(), newExercise])
     setShowExercisePicker(false)
   }
 
-  function createSet(setNumber: number): WorkoutSet {
-    // Try to get previous performance
+  function createSet(setNumber: number, prevSet?: PreviousSet): WorkoutSet {
     return {
-      set_type: 'normal',
+      set_type: prevSet?.set_type || 'normal',
       set_number: setNumber,
-      reps: 0,
-      weight: 0,
-      rpe: 0,
+      reps: prevSet?.reps || 0,
+      weight: prevSet?.weight || 0,
+      rpe: prevSet?.rpe || 0,
       is_completed: false
     }
   }
@@ -208,7 +274,8 @@ export default function WorkoutPage() {
   function addSet(exerciseIndex: number) {
     const updated = [...exercises()]
     const newSetNumber = updated[exerciseIndex].sets.length + 1
-    updated[exerciseIndex].sets.push(createSet(newSetNumber))
+    const prevSet = updated[exerciseIndex].previousPerformance?.sets[newSetNumber - 1]
+    updated[exerciseIndex].sets.push(createSet(newSetNumber, prevSet))
     setExercises(updated)
   }
 
@@ -379,6 +446,25 @@ export default function WorkoutPage() {
                 </div>
 
                 <div class="p-4 space-y-2">
+                  {/* Previous Performance */}
+                  <Show when={exercise.previousPerformance}>
+                    <div class="bg-neutral-50 dark:bg-dark-surface rounded-lg px-3 py-2 flex items-center gap-2">
+                      <span class="text-[10px] font-medium text-neutral-400 uppercase tracking-wider">Prev</span>
+                      <div class="flex-1 flex gap-2 overflow-x-auto">
+                        <For each={exercise.previousPerformance!.sets}>
+                          {(prevSet) => (
+                            <span class="text-xs text-neutral-600 dark:text-neutral-300 whitespace-nowrap">
+                              {prevSet.weight || '-'}×{prevSet.reps || '-'}
+                            </span>
+                          )}
+                        </For>
+                      </div>
+                      <span class="text-[10px] text-neutral-400">
+                        {new Date(exercise.previousPerformance!.workoutDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </Show>
+
                   {/* Set Header */}
                   <div class="grid grid-cols-[auto_1fr_1fr_1fr_1fr_auto] gap-2 text-xs text-neutral-500 dark:text-neutral-400 px-2">
                     <span>Set</span>

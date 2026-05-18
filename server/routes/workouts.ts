@@ -288,4 +288,52 @@ workouts.get('/history/exercise/:exerciseId', async (c) => {
   return c.json(result.rows)
 })
 
+// Get last session sets for an exercise (most recent workout only)
+workouts.get('/last-session/:exerciseId', async (c) => {
+  const exerciseId = c.req.param('exerciseId')
+  const userId = c.get('userId')
+  const db = getDb()
+
+  // Find the most recent workout that has this exercise with completed sets
+  const lastWorkoutResult = await db.execute({
+    sql: `
+      SELECT w.id, w.start_time
+      FROM workouts w
+      JOIN workout_exercises we ON w.id = we.workout_id
+      JOIN sets s ON we.id = s.workout_exercise_id
+      WHERE we.exercise_id = ? AND w.user_id = ? AND s.is_completed = 1
+      ORDER BY w.start_time DESC
+      LIMIT 1
+    `,
+    args: [exerciseId, userId]
+  })
+
+  if (lastWorkoutResult.rows.length === 0) {
+    return c.json({ sets: [] })
+  }
+
+  const workoutId = lastWorkoutResult.rows[0].id
+
+  const setsResult = await db.execute({
+    sql: `
+      SELECT 
+        s.set_number,
+        s.set_type,
+        s.reps,
+        s.weight,
+        s.rpe
+      FROM sets s
+      JOIN workout_exercises we ON s.workout_exercise_id = we.id
+      WHERE we.workout_id = ? AND we.exercise_id = ? AND s.is_completed = 1
+      ORDER BY s.set_number
+    `,
+    args: [workoutId, exerciseId]
+  })
+
+  return c.json({
+    workoutDate: lastWorkoutResult.rows[0].start_time,
+    sets: setsResult.rows
+  })
+})
+
 export { workouts as workoutRoutes }
