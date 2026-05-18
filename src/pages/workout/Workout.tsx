@@ -74,6 +74,53 @@ export default function WorkoutPage() {
   const [exerciseMuscleFilter, setExerciseMuscleFilter] = createSignal('All')
 
   let timerInterval: number | null = null
+  let audioCtx: AudioContext | null = null
+
+  function getAudioContext() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)()
+    }
+    return audioCtx
+  }
+
+  function playBeep(frequency = 800, duration = 0.15, type: OscillatorType = 'sine') {
+    try {
+      const ctx = getAudioContext()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.type = type
+      osc.frequency.value = frequency
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.start()
+      gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + duration)
+      osc.stop(ctx.currentTime + duration)
+    } catch {
+      // Audio not available
+    }
+  }
+
+  function playTimerDoneSound() {
+    playBeep(600, 0.2)
+    setTimeout(() => playBeep(800, 0.3), 200)
+    setTimeout(() => playBeep(1000, 0.4), 450)
+  }
+
+  async function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      await Notification.requestPermission()
+    }
+  }
+
+  function sendTimerNotification() {
+    if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
+      new Notification('Rest timer done!', {
+        body: 'Time to hit your next set 💪',
+        icon: '/icon-192x192.svg',
+        tag: 'rest-timer'
+      })
+    }
+  }
 
   async function fetchPreviousPerformance(exerciseId: number): Promise<PreviousPerformance | undefined> {
     try {
@@ -194,11 +241,18 @@ export default function WorkoutPage() {
   // Rest timer
   createEffect(() => {
     if (isResting() && restTimer() > 0) {
+      requestNotificationPermission()
       const interval = window.setInterval(() => {
         setRestTimer(prev => {
           if (prev <= 1) {
             setIsResting(false)
+            playTimerDoneSound()
+            sendTimerNotification()
             return 0
+          }
+          // Countdown beeps
+          if (prev <= 4 && prev > 1) {
+            playBeep(600, 0.1)
           }
           return prev - 1
         })
