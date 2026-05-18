@@ -30,6 +30,8 @@ async function initAuth() {
         const userData = await response.json()
         setUser(userData)
         setToken(storedToken)
+        // Pre-cache critical data for offline use
+        prefetchCriticalData()
       } else {
         localStorage.removeItem('liftoff_token')
       }
@@ -40,7 +42,20 @@ async function initAuth() {
   setIsLoading(false)
 }
 
-initAuth()
+  initAuth()
+
+// Pre-cache critical data when auth is ready
+export async function prefetchCriticalData() {
+  try {
+    const { offlineApiFetch } = await import('./localDb.js')
+    await Promise.all([
+      offlineApiFetch('/api/exercises').catch(() => null),
+      offlineApiFetch('/api/routines').catch(() => null),
+    ])
+  } catch {
+    // Offline wrapper not available yet
+  }
+}
 
 export function useAuth() {
   return { token, user, isLoading }

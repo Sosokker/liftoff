@@ -1,6 +1,7 @@
 import { createSignal, createEffect, Show, For, onCleanup } from 'solid-js'
 import { useNavigate, useSearchParams } from '@solidjs/router'
 import { apiFetch } from '../../stores/authStore'
+import { saveToStore } from '../../stores/localDb'
 import { 
   Play, 
   Check, 
@@ -398,7 +399,28 @@ export default function WorkoutPage() {
         method: 'POST',
         body: JSON.stringify(workoutData)
       })
-      
+
+      if (result.queued) {
+        // Saved offline — store locally and will sync when online
+        try {
+          await saveToStore('workouts', {
+            name: workoutData.name,
+            start_time: startTime()?.toISOString(),
+            duration_seconds: workoutData.duration_seconds,
+            notes: workoutData.notes,
+            exercise_count: workoutData.exercises.length,
+            completed_sets: workoutData.exercises.reduce((sum: number, ex: any) => sum + ex.sets.filter((s: any) => s.is_completed).length, 0),
+            created_at: new Date().toISOString(),
+            _offline: true
+          })
+        } catch {
+          // ignore local save errors
+        }
+        resetWorkoutState()
+        navigate('/workout/history')
+        return
+      }
+
       if (result.personalRecords && result.personalRecords.length > 0) {
         setPrsDetected(result.personalRecords)
         setShowPRCelebration(true)
@@ -407,9 +429,9 @@ export default function WorkoutPage() {
         resetWorkoutState()
         navigate('/workout/history')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save workout:', error)
-      alert('Failed to save workout. Please try again.')
+      alert(error.message || 'Failed to save workout. Will retry when online.')
     }
   }
 
